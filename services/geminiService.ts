@@ -1,6 +1,45 @@
 import { GoogleGenAI, Type } from '@google/genai';
 import type { WeekPlan, Post } from '../types';
 
+// Function to scrape website for contact info and basic details
+const scrapeWebsiteInfo = async (url: string): Promise<{phone?: string, email?: string, location?: string, services?: string[]}> => {
+  try {
+    // Use a CORS proxy or make the request from your backend
+    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
+    const response = await fetch(proxyUrl);
+    const data = await response.json();
+    const html = data.contents;
+    
+    // Create a temporary DOM element to parse HTML
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, 'text/html');
+    const text = doc.body?.textContent || '';
+    
+    // Extract phone number (basic regex for US phone numbers)
+    const phoneMatch = text.match(/\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})/);
+    const phone = phoneMatch ? phoneMatch[0] : undefined;
+    
+    // Extract email
+    const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
+    const email = emailMatch ? emailMatch[0] : undefined;
+    
+    // Extract location (look for city, state patterns)
+    const locationMatch = text.match(/([A-Z][a-z]+),\s*([A-Z]{2}|[A-Z][a-z]+)/);
+    const location = locationMatch ? locationMatch[0] : undefined;
+    
+    // Extract services (common dental services)
+    const serviceKeywords = ['cleaning', 'whitening', 'implants', 'orthodontics', 'invisalign', 'cosmetic', 'pediatric', 'emergency'];
+    const services = serviceKeywords.filter(service => 
+      text.toLowerCase().includes(service)
+    );
+    
+    return { phone, email, location, services };
+  } catch (error) {
+    console.warn('Failed to scrape website:', error);
+    return {};
+  }
+};
+
 // Read at build-time via Vite:
 const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
 
@@ -21,6 +60,8 @@ export const generateContentPlan = async (
   pastPostsContent?: string,
   onboardingContent?: string
 ): Promise<WeekPlan[]> => {
+  // First, scrape the website for contact info and services
+  const websiteInfo = await scrapeWebsiteInfo(practiceUrl);
   const scheduleText = postSchedule === 'MW' ? 'Mondays and Wednesdays' : 'Tuesdays and Thursdays';
 
   const systemInstruction = `
@@ -59,7 +100,7 @@ export const generateContentPlan = async (
     - Patient testimonials (you can create plausible hypothetical ones if none are on the site).
     - Fun facts about dentistry.
 
-    For each post, provide a 'title' (a short headline) and a 'caption' (the full post text). The caption should match the practice's tone, be professional, and include relevant hashtags (all in lowercase) and a call-to-action (e.g., "Call us at [Phone Number from Website] to book an appointment!", "Visit our website to learn more.").
+    For each post, provide a 'title' (a short headline) and a 'caption' (the full post text). The caption should match the practice's tone, be professional, and include relevant hashtags (all in lowercase) and a call-to-action.${websiteInfo.phone ? ` Use this phone number for calls-to-action: ${websiteInfo.phone}` : ' Use generic calls-to-action like "Call us to schedule!" or "Contact us today!"'}.${websiteInfo.location ? ` The practice is located in ${websiteInfo.location}.` : ''}${websiteInfo.services && websiteInfo.services.length > 0 ? ` Services mentioned on the website include: ${websiteInfo.services.join(', ')}.` : ''}
 
     IMPORTANT: Respond ONLY with valid JSON in this exact format:
     {
@@ -151,6 +192,8 @@ export const generateSinglePost = async (
   onboardingContent?: string,
   pastPostsContent?: string
 ): Promise<Post> => {
+  // Scrape the website for contact info
+  const websiteInfo = await scrapeWebsiteInfo(practiceUrl);
   // Create a list of all other post titles and captions to avoid duplication.
   const existingPostsText = currentPlan
     .flatMap((week, wIndex) =>
@@ -185,7 +228,7 @@ export const generateSinglePost = async (
 
     Generate a post covering topics like dental tips, specific services, team highlights, community engagement, or holiday themes if relevant.
 
-    Provide a 'title' (a short headline) and a 'caption' (the full post text with lowercase hashtags and a call-to-action).
+    Provide a 'title' (a short headline) and a 'caption' (the full post text with lowercase hashtags and a call-to-action).${websiteInfo.phone ? ` Use this phone number for calls-to-action: ${websiteInfo.phone}` : ' Use generic calls-to-action like \"Call us to schedule!\"'}.${websiteInfo.location ? ` The practice is located in ${websiteInfo.location}.` : ''}
 
     IMPORTANT: Respond ONLY with valid JSON in this exact format:
     {
