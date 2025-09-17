@@ -95,44 +95,6 @@ ${pastPostsContent}
     ` : ''}
   `;
 
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      weeks: {
-        type: Type.ARRAY,
-        description: "An array of 12 weekly content plans.",
-        items: {
-          type: Type.OBJECT,
-          properties: {
-            week: {
-              type: Type.INTEGER,
-              description: "The week number (1-12)."
-            },
-            posts: {
-              type: Type.ARRAY,
-              description: "An array containing the two posts for the week.",
-              items: {
-                type: Type.OBJECT,
-                properties: {
-                  title: {
-                    type: Type.STRING,
-                    description: "A short, engaging headline for the social media post."
-                  },
-                  caption: {
-                    type: Type.STRING,
-                    description: "The full text content for the social media post, including hashtags and a call-to-action."
-                  }
-                },
-                required: ["title", "caption"]
-              }
-            }
-          },
-          required: ["week", "posts"]
-        }
-      }
-    },
-    required: ["weeks"]
-  };
 
   try {
     const response = await ai.models.generateContent({
@@ -149,7 +111,9 @@ ${pastPostsContent}
       throw new Error("Received an empty response from the AI.");
     }
     
-    const parsedData = JSON.parse(jsonText);
+    // Clean the response by removing markdown code blocks if present
+    const cleanedJson = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
+    const parsedData = JSON.parse(cleanedJson);
     
     if (parsedData && parsedData.weeks) {
       // Post-process to ensure all hashtags are lowercase for consistency.
@@ -262,20 +226,6 @@ export const generateSinglePost = async (
     ` : ''}
   `;
 
-  const responseSchema = {
-    type: Type.OBJECT,
-    properties: {
-      title: {
-        type: Type.STRING,
-        description: "A short, engaging headline for the social media post."
-      },
-      caption: {
-        type: Type.STRING,
-        description: "The full text content for the social media post, including hashtags and a call-to-action."
-      }
-    },
-    required: ["title", "caption"]
-  };
   
   try {
     const response = await ai.models.generateContent({
@@ -292,7 +242,9 @@ export const generateSinglePost = async (
       throw new Error("Received an empty response from the AI when regenerating post.");
     }
     
-    const parsedData = JSON.parse(jsonText);
+    // Clean the response by removing markdown code blocks if present
+    const cleanedJson = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
+    const parsedData = JSON.parse(cleanedJson);
     
     if (parsedData && parsedData.title && parsedData.caption) {
       // Post-process the single post to ensure hashtags are lowercase.
