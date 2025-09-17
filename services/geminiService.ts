@@ -127,8 +127,10 @@ ${pastPostsContent}
       contents: userPrompt,
       config: {
         systemInstruction: systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: responseSchema,
+        },
         temperature: 0.7,
       },
     });
@@ -146,7 +148,7 @@ ${pastPostsContent}
         ...week,
         posts: week.posts.map(post => ({
           ...post,
-          caption: post.caption.replace(/#(\w+)/g, (_match, tag) => `#${tag.toLowerCase()}`)
+          caption: post.caption.replace(/#(\w+)/g, (_match: string, tag: string) => `#${tag.toLowerCase()}`)
         }))
       }));
       return processedWeeks as WeekPlan[];
@@ -266,8 +268,10 @@ export const generateSinglePost = async (
       contents: userPrompt,
       config: {
         systemInstruction: systemInstruction,
-        responseMimeType: "application/json",
-        responseSchema: responseSchema,
+        generationConfig: {
+          responseMimeType: "application/json",
+          responseSchema: responseSchema,
+        },
         temperature: 0.8,
       },
     });
@@ -281,7 +285,7 @@ export const generateSinglePost = async (
     
     if (parsedData && parsedData.title && parsedData.caption) {
       // Post-process the single post to ensure hashtags are lowercase.
-      parsedData.caption = parsedData.caption.replace(/#(\w+)/g, (_match, tag) => `#${tag.toLowerCase()}`);
+      parsedData.caption = parsedData.caption.replace(/#(\w+)/g, (_match: string, tag: string) => `#${tag.toLowerCase()}`);
       return parsedData as Post;
     } else {
        throw new Error("Invalid data structure received from AI for single post.");
