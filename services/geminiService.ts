@@ -130,7 +130,6 @@ ${pastPostsContent}
         responseMimeType: "application/json",
         responseSchema: responseSchema,
         temperature: 0.7,
-        tools: [{ googleSearch: {} }],
       },
     });
 
@@ -270,7 +269,6 @@ export const generateSinglePost = async (
         responseMimeType: "application/json",
         responseSchema: responseSchema,
         temperature: 0.8,
-        tools: [{ googleSearch: {} }],
       },
     });
 
