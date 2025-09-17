@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+  Overrides the default browser autofill styles which often add a
+  light background color that can clash with the design.
+  - The `box-shadow` trick is used to force the background to white.
+  - The `-webkit-text-fill-color` ensures the text remains dark and readable.
+*/
+input:-webkit-autofill,
+input:-webkit-autofill:hover,
+input:-webkit-autofill:focus,
+input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px white inset !important;
+    -webkit-text-fill-color: #111827 !important; /* Corresponds to text-gray-900 */
+}
