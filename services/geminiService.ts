@@ -60,6 +60,19 @@ export const generateContentPlan = async (
     - Fun facts about dentistry.
 
     For each post, provide a 'title' (a short headline) and a 'caption' (the full post text). The caption should match the practice's tone, be professional, and include relevant hashtags (all in lowercase) and a call-to-action (e.g., "Call us at [Phone Number from Website] to book an appointment!", "Visit our website to learn more.").
+
+    IMPORTANT: Respond ONLY with valid JSON in this exact format:
+    {
+      "weeks": [
+        {
+          "week": 1,
+          "posts": [
+            {"title": "Post title", "caption": "Post caption with #hashtags"},
+            {"title": "Post title", "caption": "Post caption with #hashtags"}
+          ]
+        }
+      ]
+    }
   `;
 
   const userPrompt = `
@@ -127,10 +140,6 @@ ${pastPostsContent}
       contents: userPrompt,
       config: {
         systemInstruction: systemInstruction,
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: responseSchema,
-        },
         temperature: 0.7,
       },
     });
@@ -213,6 +222,12 @@ export const generateSinglePost = async (
     Generate a post covering topics like dental tips, specific services, team highlights, community engagement, or holiday themes if relevant.
 
     Provide a 'title' (a short headline) and a 'caption' (the full post text with lowercase hashtags and a call-to-action).
+
+    IMPORTANT: Respond ONLY with valid JSON in this exact format:
+    {
+      "title": "Post title",
+      "caption": "Post caption with #hashtags"
+    }
   `;
 
   const userPrompt = `
@@ -268,10 +283,6 @@ export const generateSinglePost = async (
       contents: userPrompt,
       config: {
         systemInstruction: systemInstruction,
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: responseSchema,
-        },
         temperature: 0.8,
       },
     });
