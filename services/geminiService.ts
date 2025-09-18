@@ -95,7 +95,6 @@ export const generateContentPlan = async (
     Create varied content that showcases the practice's unique qualities:
     - Educational dental tips relevant to their specialties
     - Service highlights based on their actual offerings
-    - Team spotlights using real team member information
     - Community engagement reflecting their local involvement
     - Technology showcases if they use advanced equipment
     - Patient testimonials (create realistic ones based on their practice style)
@@ -241,7 +240,6 @@ export const generateSinglePost = async (
     Create a post that showcases the practice's unique qualities based on the research, such as:
     - Educational content relevant to their specialties
     - Service highlights using their actual offerings
-    - Team spotlights with real team information
     - Community engagement reflecting their local involvement
     - Technology showcases if applicable
     - Patient testimonials matching their practice style
