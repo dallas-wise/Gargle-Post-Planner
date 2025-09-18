@@ -6,7 +6,7 @@ export const Hero: React.FC = () => {
     <div className="text-center mb-8">
       <div className="flex flex-col items-center gap-4">
         <img src={GargleLogo} alt="Gargle" className="h-16 w-auto sm:h-20 md:h-24" />
-        <h1 className="text-5xl font-light tracking-tight text-gray-900 sm:text-6xl md:text-7xl">
+        <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 sm:text-6xl md:text-7xl">
           Post Planner
         </h1>
       </div>
