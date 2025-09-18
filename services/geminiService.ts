@@ -1,47 +1,49 @@
-import { GoogleGenAI, Type } from '@google/genai';
+import { GoogleGenAI } from '@google/genai';
 import type { WeekPlan, Post } from '../types';
 
-// Function to scrape website for contact info and basic details
-const scrapeWebsiteInfo = async (url: string): Promise<{phone?: string, email?: string, location?: string, services?: string[]}> => {
+// Use Gemini Search API to research the dental practice
+const researchPracticeWithSearch = async (practiceUrl: string, practiceName: string, ai: GoogleGenAI): Promise<string> => {
   try {
-    // Use a CORS proxy or make the request from your backend
-    const proxyUrl = `https://api.allorigins.win/get?url=${encodeURIComponent(url)}`;
-    const response = await fetch(proxyUrl);
-    const data = await response.json();
-    const html = data.contents;
-    
-    // Create a temporary DOM element to parse HTML
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-    const text = doc.body?.textContent || '';
-    
-    // Extract phone number (basic regex for US phone numbers)
-    const phoneMatch = text.match(/\(?([0-9]{3})\)?[-. ]?([0-9]{3})[-. ]?([0-9]{4})/);
-    const phone = phoneMatch ? phoneMatch[0] : undefined;
-    
-    // Extract email
-    const emailMatch = text.match(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/);
-    const email = emailMatch ? emailMatch[0] : undefined;
-    
-    // Extract location (look for city, state patterns)
-    const locationMatch = text.match(/([A-Z][a-z]+),\s*([A-Z]{2}|[A-Z][a-z]+)/);
-    const location = locationMatch ? locationMatch[0] : undefined;
-    
-    // Extract services (common dental services)
-    const serviceKeywords = ['cleaning', 'whitening', 'implants', 'orthodontics', 'invisalign', 'cosmetic', 'pediatric', 'emergency'];
-    const services = serviceKeywords.filter(service => 
-      text.toLowerCase().includes(service)
-    );
-    
-    return { phone, email, location, services };
+    // Configure the grounding tool for Google Search
+    const groundingTool = {
+      googleSearch: {}
+    };
+
+    const researchQuery = `${practiceName} dental practice ${practiceUrl} services team location contact information specialties technology awards community involvement`;
+
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: `Research this dental practice comprehensively and provide detailed information: ${researchQuery}. 
+
+      Please analyze and provide information about:
+      1. Practice name and location (city, state, address)
+      2. All dental services offered (be comprehensive, not just basic cleanings)
+      3. Team members and their specializations
+      4. Practice philosophy and brand voice
+      5. Technology and equipment used
+      6. Any awards, certifications, or recognition
+      7. Community involvement or local partnerships
+      8. Contact information (phone, email)
+      9. Unique selling points that differentiate this practice
+      10. Target patient demographics
+      11. Any special programs or offers
+
+      Format the response as detailed, well-organized information that can be used to create authentic social media content.`,
+      config: {
+        tools: [groundingTool],
+        temperature: 0.3,
+      },
+    });
+
+    return response.text || 'No research results available';
   } catch (error) {
-    console.warn('Failed to scrape website:', error);
-    return {};
+    console.warn('Failed to research practice with Gemini Search:', error);
+    return `Research unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`;
   }
 };
 
 // Read at build-time via Vite:
-const API_KEY = import.meta.env.VITE_GEMINI_API_KEY as string;
+const API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY as string;
 
 if (!API_KEY) {
   throw new Error(
@@ -60,47 +62,48 @@ export const generateContentPlan = async (
   pastPostsContent?: string,
   onboardingContent?: string
 ): Promise<WeekPlan[]> => {
-  // First, scrape the website for contact info and services
-  const websiteInfo = await scrapeWebsiteInfo(practiceUrl);
+  // Research the practice using Gemini Search API
+  const practiceResearch = await researchPracticeWithSearch(practiceUrl, practiceName, ai);
   const scheduleText = postSchedule === 'MW' ? 'Mondays and Wednesdays' : 'Tuesdays and Thursdays';
 
   const systemInstruction = `
     Act as a social media marketing expert specializing in content for dental practices. Your task is to generate a 12-week social media content calendar.
 
-    You will be given the practice name, website, content start date, posting schedule, and potentially an onboarding document and a list of past posts.
+    You will be given the practice name, website, content start date, posting schedule, comprehensive research about the practice, and potentially an onboarding document and a list of past posts.
 
-    **Primary Research Source:**
+    **Research-Based Content Creation:**
     ${onboardingContent ? `
-    An onboarding document has been provided. This is your PRIMARY source of truth for the practice's details. Use it to understand the practice's brand voice, tone, specific services, team members, and unique selling propositions. The website should be used as a secondary, supplementary resource.
+    An onboarding document has been provided as your PRIMARY source of truth. Use the research data as supplementary information to enhance and validate the onboarding content.
     ` : `
-    First, thoroughly research the dental practice using their website to identify:
-    - The practice's specific location (city, state).
-    - Key services, treatments, and specialties offered (e.g., cosmetic dentistry, orthodontics, pediatric care, Invisalign, implants).
-    - The overall tone and brand voice of the practice (e.g., family-friendly, high-tech, luxurious).
-    - Any unique selling propositions (e.g., "meet the team" pages, specific technology used, patient testimonials).
+    Use the comprehensive research data provided about this dental practice to create authentic, personalized content that reflects their actual services, team, location, and brand personality.
     `}
 
-    Based on your research, create a content plan with 2 unique posts per week for 12 weeks.
+    **Practice Research Data:**
+    ${practiceResearch}
+
+    Based on this research, create a content plan with 2 unique posts per week for 12 weeks that authentically represents this specific practice.
 
     ${pastPostsContent ? `
     **Avoid Duplication:**
-    The user has provided a document of their previous posts. Carefully review this content. DO NOT generate posts that are identical or highly similar to the provided past posts. Use them as inspiration for what has been done, but ensure your output is fresh and original.
+    The user has provided their previous posts. DO NOT generate content that duplicates or closely resembles these past posts. Create fresh, original content.
     ` : ''}
 
     **Holiday Content:**
-    Using the start date provided by the user, determine if any of the 12 weeks fall on or near a major US holiday (e.g., New Year's Day, Valentine's Day, Fourth of July, Halloween, Thanksgiving, Christmas). If a week includes a holiday, one or both posts for that week should be themed around that holiday, relating it back to dental health or the practice.
+    Using the start date provided, determine if any of the 12 weeks include major US holidays. Create holiday-themed posts that connect the celebration to dental health or the practice.
 
-    **Regular Content:**
-    For all other weeks, ensure the content is varied and tailored to the information you discovered, covering topics like:
-    - Dental tips and oral hygiene education.
-    - Posts highlighting specific services you found on their website.
-    - "Meet the team" or "behind-the-scenes" posts inspired by their site.
-    - Promotions or special offers.
-    - Posts that highlight the practice's connection to its local community.
-    - Patient testimonials (you can create plausible hypothetical ones if none are on the site).
-    - Fun facts about dentistry.
+    **Content Strategy:**
+    Create varied content that showcases the practice's unique qualities:
+    - Educational dental tips relevant to their specialties
+    - Service highlights based on their actual offerings
+    - Team spotlights using real team member information
+    - Community engagement reflecting their local involvement
+    - Technology showcases if they use advanced equipment
+    - Patient testimonials (create realistic ones based on their practice style)
+    - Seasonal dental health tips
+    - Practice milestones or achievements
+    - Behind-the-scenes content matching their brand voice
 
-    For each post, provide a 'title' (a short headline) and a 'caption' (the full post text). The caption should match the practice's tone, be professional, and include relevant hashtags (all in lowercase) and a call-to-action.${websiteInfo.phone ? ` Use this phone number for calls-to-action: ${websiteInfo.phone}` : ' Use generic calls-to-action like "Call us to schedule!" or "Contact us today!"'}.${websiteInfo.location ? ` The practice is located in ${websiteInfo.location}.` : ''}${websiteInfo.services && websiteInfo.services.length > 0 ? ` Services mentioned on the website include: ${websiteInfo.services.join(', ')}.` : ''}
+    Each post should include a compelling title and caption with appropriate hashtags (lowercase) and calls-to-action that reflect the practice's actual contact information and location.
 
     IMPORTANT: Respond ONLY with valid JSON in this exact format:
     {
@@ -122,6 +125,9 @@ export const generateContentPlan = async (
     - Practice Website: "${practiceUrl}"
     - Content Plan Start Date: ${startDate}
     - Posting Schedule: The two posts for each week should be scheduled for ${scheduleText}.
+    
+    Use the research data provided in the system instruction to create authentic, personalized content.
+    
     ${onboardingContent ? `
 ---
 REFERENCE: CLIENT ONBOARDING DOCUMENT (PRIMARY SOURCE)
@@ -192,9 +198,10 @@ export const generateSinglePost = async (
   onboardingContent?: string,
   pastPostsContent?: string
 ): Promise<Post> => {
-  // Scrape the website for contact info
-  const websiteInfo = await scrapeWebsiteInfo(practiceUrl);
-  // Create a list of all other post titles and captions to avoid duplication.
+  // Research the practice using Gemini Search API
+  const practiceResearch = await researchPracticeWithSearch(practiceUrl, practiceName, ai);
+  
+  // Create a list of all other post titles and captions to avoid duplication
   const existingPostsText = currentPlan
     .flatMap((week, wIndex) =>
       week.posts.map((post, pIndex) => {
@@ -210,25 +217,36 @@ export const generateSinglePost = async (
   const systemInstruction = `
     You are a social media marketing expert for dental practices. Your task is to generate a SINGLE, new, unique social media post.
 
-    You will be given the practice name, website, and potentially an onboarding document and a list of past posts. Use these to understand the practice's brand, services, and tone.
+    You will be given comprehensive research about the practice, and potentially an onboarding document and a list of past posts. Use this information to create authentic content that reflects the practice's actual characteristics.
+
+    **Practice Research Data:**
+    ${practiceResearch}
+
+    **Research-Based Content Creation:**
     ${onboardingContent ? `
-    The provided onboarding document is your PRIMARY source of truth.
+    The provided onboarding document is your PRIMARY source of truth. Use the research data to enhance and validate this information.
     ` : `
-    Thoroughly research the dental practice website for inspiration.
+    Use the comprehensive research data to create content that authentically represents this specific dental practice.
     `}
 
     **Date-Specific Content:**
-    The post you are generating is for a specific date. You MUST check if this date is on or near a major US holiday (e.g., Halloween, Thanksgiving, Christmas, New Year's, Valentine's Day, etc.). If it is, the new post's theme MUST be appropriate for that holiday, relating it back to dental health.
+    The post is for ${postDate}. Check if this date is on or near a major US holiday and create holiday-themed content if appropriate, connecting it to dental health.
 
-    **Crucial Instruction: Avoid Duplication**
-    A list of already generated posts for the content plan is provided below. You MUST NOT create a post that is highly similar in topic or content to any of the posts in that list. Also, avoid topics from the user's provided past posts, if any. Your goal is to provide a fresh, alternative idea.
+    **Avoid Duplication:**
+    You MUST NOT create content similar to the existing posts in the current plan or the user's past posts. Create fresh, original content.
 
     **User Instructions:**
-    If the user provides special instructions, you must follow them to tailor the post's content, tone, or focus.
+    ${instructions ? `Follow these specific instructions: ${instructions}` : 'No special instructions provided.'}
 
-    Generate a post covering topics like dental tips, specific services, team highlights, community engagement, or holiday themes if relevant.
+    Create a post that showcases the practice's unique qualities based on the research, such as:
+    - Educational content relevant to their specialties
+    - Service highlights using their actual offerings
+    - Team spotlights with real team information
+    - Community engagement reflecting their local involvement
+    - Technology showcases if applicable
+    - Patient testimonials matching their practice style
 
-    Provide a 'title' (a short headline) and a 'caption' (the full post text with lowercase hashtags and a call-to-action).${websiteInfo.phone ? ` Use this phone number for calls-to-action: ${websiteInfo.phone}` : ' Use generic calls-to-action like \"Call us to schedule!\"'}.${websiteInfo.location ? ` The practice is located in ${websiteInfo.location}.` : ''}
+    Include a compelling title and caption with appropriate hashtags (lowercase) and calls-to-action using their actual contact information.
 
     IMPORTANT: Respond ONLY with valid JSON in this exact format:
     {
@@ -243,12 +261,7 @@ export const generateSinglePost = async (
     - Practice Website: "${practiceUrl}"
     - Post Date: ${postDate}
 
-    ${instructions ? `
-    ---
-    SPECIAL INSTRUCTIONS FROM USER:
-    ---
-    ${instructions}
-    ` : ''}
+    Use the research data provided in the system instruction to create authentic, personalized content.
 
     ---
     EXISTING POSTS IN THE CURRENT PLAN (DO NOT REPEAT THESE TOPICS):
