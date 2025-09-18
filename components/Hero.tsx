@@ -4,8 +4,9 @@ import GargleLogo from '../assets/Gargle-Logo.png';
 export const Hero: React.FC = () => {
   return (
     <div className="text-center mb-8">
-      <div className="flex flex-col items-center gap-4">
+      <div className="flex flex-col items-center gap-2">
         <img src={GargleLogo} alt="Gargle" className="h-16 w-auto sm:h-20 md:h-24" />
+        <div className="w-24 h-px bg-gray-300 my-2"></div>
         <h1 className="text-5xl font-extrabold tracking-tight text-gray-900 sm:text-6xl md:text-7xl">
           Post Planner
         </h1>
