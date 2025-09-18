@@ -5,6 +5,7 @@ import { generateContentPlan, generateSinglePost } from './services/geminiServic
 import type { WeekPlan, Post } from './types';
 import { ErrorDisplay } from './components/ErrorDisplay';
 import { Hero } from './components/Hero';
+import { Header } from './components/Header';
 import { extractTextFromPdf } from './utils/pdfParser';
 import { calculatePostDate } from './utils/dateUtils';
 
@@ -132,6 +133,7 @@ const App: React.FC = () => {
 
   return (
     <div className="bg-gray-50 min-h-screen text-gray-800 font-sans">
+      <Header />
       <main className="container mx-auto px-4 py-12 md:py-20">
         <div className="max-w-7xl mx-auto">
           <Hero />
