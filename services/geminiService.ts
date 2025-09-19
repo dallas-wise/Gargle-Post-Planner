@@ -60,7 +60,8 @@ export const generateContentPlan = async (
   startDate: string,
   postSchedule: 'MW' | 'TTH',
   pastPostsContent?: string,
-  onboardingContent?: string
+  onboardingContent?: string,
+  specialInstructions?: string
 ): Promise<WeekPlan[]> => {
   // Research the practice using Gemini Search API
   const practiceResearch = await researchPracticeWithSearch(practiceUrl, practiceName, ai);
@@ -86,6 +87,11 @@ export const generateContentPlan = async (
     ${pastPostsContent ? `
     **Avoid Duplication:**
     The user has provided their previous posts. DO NOT generate content that duplicates or closely resembles these past posts. Create fresh, original content.
+    ` : ''}
+
+    ${specialInstructions ? `
+    **Special Instructions:**
+    Follow these specific instructions for all posts: ${specialInstructions}
     ` : ''}
 
     **Holiday Content:**
