@@ -14,6 +14,8 @@ type PostSchedule = 'MW' | 'TTH';
 const App: React.FC = () => {
   const [practiceName, setPracticeName] = useState<string>('');
   const [practiceUrl, setPracticeUrl] = useState<string>('');
+  const [practicePhone, setPracticePhone] = useState<string>('');
+  const [practiceLocation, setPracticeLocation] = useState<string>('');
   const [startDate, setStartDate] = useState<string>('');
   const [postSchedule, setPostSchedule] = useState<PostSchedule>('MW');
   const [onboardingFile, setOnboardingFile] = useState<File | null>(null);
@@ -75,7 +77,7 @@ const App: React.FC = () => {
         }
       }
 
-      const plan = await generateContentPlan(practiceName, practiceUrl, startDate, postSchedule, tempPastPostsContent, tempOnboardingContent, specialInstructions);
+      const plan = await generateContentPlan(practiceName, practiceUrl, startDate, postSchedule, tempPastPostsContent, tempOnboardingContent, specialInstructions, practicePhone, practiceLocation);
       setContentPlan(plan);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -84,7 +86,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [practiceName, practiceUrl, startDate, postSchedule, pastPostsFile, onboardingFile, specialInstructions]);
+  }, [practiceName, practiceUrl, practicePhone, practiceLocation, startDate, postSchedule, pastPostsFile, onboardingFile, specialInstructions]);
 
   const handleContentPlanChange = useCallback((weekIndex: number, postIndex: number, field: 'title' | 'caption', value: string) => {
     setContentPlan(currentPlan => {
@@ -145,6 +147,10 @@ const App: React.FC = () => {
               setPracticeName={setPracticeName}
               practiceUrl={practiceUrl}
               setPracticeUrl={setPracticeUrl}
+              practicePhone={practicePhone}
+              setPracticePhone={setPracticePhone}
+              practiceLocation={practiceLocation}
+              setPracticeLocation={setPracticeLocation}
               startDate={startDate}
               setStartDate={setStartDate}
               postSchedule={postSchedule}

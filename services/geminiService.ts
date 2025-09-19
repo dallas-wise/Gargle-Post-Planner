@@ -61,7 +61,9 @@ export const generateContentPlan = async (
   postSchedule: 'MW' | 'TTH',
   pastPostsContent?: string,
   onboardingContent?: string,
-  specialInstructions?: string
+  specialInstructions?: string,
+  practicePhone?: string,
+  practiceLocation?: string
 ): Promise<WeekPlan[]> => {
   // Research the practice using Gemini Search API
   const practiceResearch = await researchPracticeWithSearch(practiceUrl, practiceName, ai);
@@ -78,6 +80,14 @@ export const generateContentPlan = async (
     
     REMINDER: These special instructions above are MANDATORY and must be applied to EVERY single post you create. Do not ignore these instructions.
     !!!! END CRITICAL INSTRUCTIONS !!!!
+    ` : ''}
+
+    ${(practicePhone || practiceLocation) ? `
+    **VERIFIED PRACTICE CONTACT INFORMATION:**
+    ${practicePhone ? `Phone: ${practicePhone}` : ''}
+    ${practiceLocation ? `Location: ${practiceLocation}` : ''}
+    
+    IMPORTANT: Use ONLY the contact information provided above in any posts that include contact details. Do not use or reference any other phone numbers or locations you may find in the research data.
     ` : ''}
 
     **Research-Based Content Creation:**
@@ -115,7 +125,7 @@ export const generateContentPlan = async (
     REMINDER: Every post must incorporate the special instructions provided at the beginning of this prompt: "${specialInstructions}"
     ` : ''}
 
-    Each post should include a compelling title and caption with appropriate hashtags (lowercase) and calls-to-action that reflect the practice's actual contact information and location.
+    Each post should include a compelling title and caption with appropriate hashtags (lowercase) and calls-to-action${(practicePhone || practiceLocation) ? ' using the verified contact information provided above' : ' that reflect the practice\'s actual contact information and location'}.
 
     IMPORTANT: Respond ONLY with valid JSON in this exact format:
     {
