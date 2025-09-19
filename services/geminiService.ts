@@ -18,7 +18,7 @@ const researchPracticeWithSearch = async (practiceUrl: string, practiceName: str
       Please analyze and provide information about:
       1. Practice name and location (city, state, address)
       2. All dental services offered (be comprehensive, not just basic cleanings)
-      3. Team members and their specializations
+      3. Practice specializations and areas of expertise (focus on services, not individual doctors)
       4. Practice philosophy and brand voice
       5. Technology and equipment used
       6. Any awards, certifications, or recognition
@@ -90,6 +90,12 @@ export const generateContentPlan = async (
     IMPORTANT: Use ONLY the contact information provided above in any posts that include contact details. Do not use or reference any other phone numbers or locations you may find in the research data.
     ` : ''}
 
+    **CONTENT RESTRICTIONS:**
+    - DO NOT create employee spotlights, team member features, or staff introductions
+    - DO NOT create posts highlighting individual employees, doctors, or staff members
+    - Focus on the practice as a whole, services, patient care, and educational content instead
+    - Behind-the-scenes content should focus on equipment, technology, or general practice atmosphere, NOT individual people
+
     **Research-Based Content Creation:**
     ${onboardingContent ? `
     An onboarding document has been provided as your PRIMARY source of truth. Use the research data as supplementary information to enhance and validate the onboarding content.
@@ -119,11 +125,13 @@ export const generateContentPlan = async (
     - Patient testimonials (create realistic ones based on their practice style)
     - Seasonal dental health tips
     - Practice milestones or achievements
-    - Behind-the-scenes content matching their brand voice
+    - Office environment and technology features (NO individual staff members)
 
     ${specialInstructions ? `
     REMINDER: Every post must incorporate the special instructions provided at the beginning of this prompt: "${specialInstructions}"
     ` : ''}
+
+    FINAL REMINDER: DO NOT create any employee spotlights, staff introductions, or posts featuring individual team members. Focus on the practice, services, and patient care instead.
 
     Each post should include a compelling title and caption with appropriate hashtags (lowercase) and calls-to-action${(practicePhone || practiceLocation) ? ' using the verified contact information provided above' : ' that reflect the practice\'s actual contact information and location'}.
 
