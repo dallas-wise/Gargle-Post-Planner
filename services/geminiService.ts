@@ -93,6 +93,7 @@ export const generateContentPlan = async (
     **CONTENT RESTRICTIONS:**
     - DO NOT create employee spotlights, team member features, or staff introductions
     - DO NOT create posts highlighting individual employees, doctors, or staff members
+    - DO NOT create patient testimonials, patient stories, or posts featuring specific patients
     - Focus on the practice as a whole, services, patient care, and educational content instead
     - Behind-the-scenes content should focus on equipment, technology, or general practice atmosphere, NOT individual people
 
@@ -122,7 +123,6 @@ export const generateContentPlan = async (
     - Service highlights based on their actual offerings
     - Community engagement reflecting their local involvement
     - Technology showcases if they use advanced equipment
-    - Patient testimonials (create realistic ones based on their practice style)
     - Seasonal dental health tips
     - Practice milestones or achievements
     - Office environment and technology features (NO individual staff members)
@@ -131,7 +131,7 @@ export const generateContentPlan = async (
     REMINDER: Every post must incorporate the special instructions provided at the beginning of this prompt: "${specialInstructions}"
     ` : ''}
 
-    FINAL REMINDER: DO NOT create any employee spotlights, staff introductions, or posts featuring individual team members. Focus on the practice, services, and patient care instead.
+    FINAL REMINDER: DO NOT create any employee spotlights, staff introductions, posts featuring individual team members, or patient testimonials. Focus on the practice, services, and patient care instead.
 
     Each post should include a compelling title and caption with appropriate hashtags (lowercase) and calls-to-action${(practicePhone || practiceLocation) ? ' using the verified contact information provided above' : ' that reflect the practice\'s actual contact information and location'}.
 
