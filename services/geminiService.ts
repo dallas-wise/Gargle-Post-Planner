@@ -72,6 +72,14 @@ export const generateContentPlan = async (
 
     You will be given the practice name, website, content start date, posting schedule, comprehensive research about the practice, and potentially an onboarding document and a list of past posts.
 
+    ${specialInstructions ? `
+    !!!! CRITICAL SPECIAL INSTRUCTIONS - MUST FOLLOW FOR ALL POSTS !!!!
+    ${specialInstructions}
+    
+    REMINDER: These special instructions above are MANDATORY and must be applied to EVERY single post you create. Do not ignore these instructions.
+    !!!! END CRITICAL INSTRUCTIONS !!!!
+    ` : ''}
+
     **Research-Based Content Creation:**
     ${onboardingContent ? `
     An onboarding document has been provided as your PRIMARY source of truth. Use the research data as supplementary information to enhance and validate the onboarding content.
@@ -89,11 +97,6 @@ export const generateContentPlan = async (
     The user has provided their previous posts. DO NOT generate content that duplicates or closely resembles these past posts. Create fresh, original content.
     ` : ''}
 
-    ${specialInstructions ? `
-    **Special Instructions:**
-    Follow these specific instructions for all posts: ${specialInstructions}
-    ` : ''}
-
     **Holiday Content:**
     Using the start date provided, determine if any of the 12 weeks include major US holidays. Create holiday-themed posts that connect the celebration to dental health or the practice.
 
@@ -107,6 +110,10 @@ export const generateContentPlan = async (
     - Seasonal dental health tips
     - Practice milestones or achievements
     - Behind-the-scenes content matching their brand voice
+
+    ${specialInstructions ? `
+    REMINDER: Every post must incorporate the special instructions provided at the beginning of this prompt: "${specialInstructions}"
+    ` : ''}
 
     Each post should include a compelling title and caption with appropriate hashtags (lowercase) and calls-to-action that reflect the practice's actual contact information and location.
 
