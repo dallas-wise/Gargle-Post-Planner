@@ -21,6 +21,7 @@ const App: React.FC = () => {
   const [onboardingFile, setOnboardingFile] = useState<File | null>(null);
   const [pastPostsFile, setPastPostsFile] = useState<File | null>(null);
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
+  const [milestones, setMilestones] = useState<string>('');
   const [contentPlan, setContentPlan] = useState<WeekPlan[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -77,7 +78,7 @@ const App: React.FC = () => {
         }
       }
 
-      const plan = await generateContentPlan(practiceName, practiceUrl, startDate, postSchedule, tempPastPostsContent, tempOnboardingContent, specialInstructions, practicePhone, practiceLocation);
+      const plan = await generateContentPlan(practiceName, practiceUrl, startDate, postSchedule, tempPastPostsContent, tempOnboardingContent, specialInstructions, practicePhone, practiceLocation, milestones);
       setContentPlan(plan);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -86,7 +87,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [practiceName, practiceUrl, practicePhone, practiceLocation, startDate, postSchedule, pastPostsFile, onboardingFile, specialInstructions]);
+  }, [practiceName, practiceUrl, practicePhone, practiceLocation, startDate, postSchedule, pastPostsFile, onboardingFile, specialInstructions, milestones]);
 
   const handleContentPlanChange = useCallback((weekIndex: number, postIndex: number, field: 'title' | 'caption', value: string) => {
     setContentPlan(currentPlan => {
@@ -161,6 +162,8 @@ const App: React.FC = () => {
               setPastPostsFile={setPastPostsFile}
               specialInstructions={specialInstructions}
               setSpecialInstructions={setSpecialInstructions}
+              milestones={milestones}
+              setMilestones={setMilestones}
               onSubmit={handleSubmit}
               isLoading={isLoading}
             />

@@ -63,7 +63,8 @@ export const generateContentPlan = async (
   onboardingContent?: string,
   specialInstructions?: string,
   practicePhone?: string,
-  practiceLocation?: string
+  practiceLocation?: string,
+  milestones?: string
 ): Promise<WeekPlan[]> => {
   // Research the practice using Gemini Search API
   const practiceResearch = await researchPracticeWithSearch(practiceUrl, practiceName, ai);
@@ -116,6 +117,14 @@ export const generateContentPlan = async (
 
     **Holiday Content:**
     Using the start date provided, determine if any of the 12 weeks include major US holidays. Create holiday-themed posts that connect the celebration to dental health or the practice.
+
+    ${milestones ? `
+    **Team Milestones & Celebrations:**
+    The following team member birthdays and work anniversaries have been provided:
+    ${milestones}
+
+    When a post date falls on or very near (within 3-5 days) one of these milestone dates, consider creating a celebratory post for that team member. This should feel natural and not forced - only include if it makes sense for the posting schedule. These celebration posts should be warm and authentic, focusing on the team member's contribution to patient care and the practice culture.
+    ` : ''}
 
     **Content Strategy:**
     Create varied content that showcases the practice's unique qualities:

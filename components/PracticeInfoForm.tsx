@@ -21,6 +21,8 @@ interface PracticeInfoFormProps {
   setPastPostsFile: (file: File | null) => void;
   specialInstructions: string;
   setSpecialInstructions: (value: string) => void;
+  milestones: string;
+  setMilestones: (value: string) => void;
   onSubmit: () => void;
   isLoading: boolean;
 }
@@ -44,6 +46,8 @@ export const PracticeInfoForm: React.FC<PracticeInfoFormProps> = ({
   setPastPostsFile,
   specialInstructions,
   setSpecialInstructions,
+  milestones,
+  setMilestones,
   onSubmit,
   isLoading,
 }) => {
@@ -254,7 +258,24 @@ export const PracticeInfoForm: React.FC<PracticeInfoFormProps> = ({
         </div>
       </div>
 
-      <div className="pt-6 border-t border-gray-200">
+      <div className="pt-6 border-t border-gray-200 space-y-6">
+        <div>
+          <label htmlFor="milestones" className="block text-sm font-medium text-gray-700 mb-1">
+            Birthdays & Work Anniversaries (Optional)
+          </label>
+          <p className="text-sm text-gray-500 mb-2">
+            List team member birthdays and work anniversaries with dates (e.g., "Dr. Smith Birthday - March 15", "Sarah 5 Year Anniversary - June 1"). The AI will create posts to celebrate these milestones on the appropriate dates.
+          </p>
+          <textarea
+            id="milestones"
+            value={milestones}
+            onChange={(e) => setMilestones(e.target.value)}
+            rows={4}
+            placeholder="e.g., Dr. Johnson Birthday - March 15&#10;Sarah 5 Year Anniversary - June 1&#10;Dr. Lee Birthday - August 22"
+            className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white text-gray-900 placeholder:text-gray-400 resize-none"
+          />
+        </div>
+
         <div>
           <label htmlFor="specialInstructions" className="block text-sm font-medium text-gray-700 mb-1">
             Special Instructions for Post Generation (Optional)
