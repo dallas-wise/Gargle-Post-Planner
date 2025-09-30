@@ -31,6 +31,8 @@ const App: React.FC = () => {
   // State to hold the text content of the uploaded files
   const [onboardingContent, setOnboardingContent] = useState<string | undefined>();
   const [pastPostsContent, setPastPostsContent] = useState<string | undefined>();
+  // Cache research results to avoid re-fetching
+  const [cachedResearch, setCachedResearch] = useState<{ url: string; data: string } | null>(null);
 
   // Effects to clear text content if a file is removed
   useEffect(() => {
@@ -40,6 +42,13 @@ const App: React.FC = () => {
   useEffect(() => {
     if (!pastPostsFile) setPastPostsContent(undefined);
   }, [pastPostsFile]);
+
+  // Clear cached research if practice URL changes
+  useEffect(() => {
+    if (cachedResearch && cachedResearch.url !== practiceUrl) {
+      setCachedResearch(null);
+    }
+  }, [practiceUrl, cachedResearch]);
 
   const handleSubmit = useCallback(async () => {
     if (!practiceName || !practiceUrl || !startDate) {
@@ -78,7 +87,20 @@ const App: React.FC = () => {
         }
       }
 
-      const plan = await generateContentPlan(practiceName, practiceUrl, startDate, postSchedule, tempPastPostsContent, tempOnboardingContent, specialInstructions, practicePhone, practiceLocation, milestones);
+      const plan = await generateContentPlan(
+        practiceName,
+        practiceUrl,
+        startDate,
+        postSchedule,
+        tempPastPostsContent,
+        tempOnboardingContent,
+        specialInstructions,
+        practicePhone,
+        practiceLocation,
+        milestones,
+        cachedResearch,
+        setCachedResearch
+      );
       setContentPlan(plan);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : 'An unknown error occurred.';
@@ -115,7 +137,9 @@ const App: React.FC = () => {
         postDate.toISOString().split('T')[0], // Pass date as YYYY-MM-DD
         instructions,
         onboardingContent,
-        pastPostsContent
+        pastPostsContent,
+        cachedResearch,
+        setCachedResearch
       );
 
       setContentPlan(currentPlan => {

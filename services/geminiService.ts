@@ -2,7 +2,19 @@ import { GoogleGenAI } from '@google/genai';
 import type { WeekPlan, Post } from '../types';
 
 // Use Gemini Search API to research the dental practice
-const researchPracticeWithSearch = async (practiceUrl: string, practiceName: string, ai: GoogleGenAI): Promise<string> => {
+const researchPracticeWithSearch = async (
+  practiceUrl: string,
+  practiceName: string,
+  ai: GoogleGenAI,
+  cachedResearch: { url: string; data: string } | null,
+  setCachedResearch: (cache: { url: string; data: string }) => void
+): Promise<string> => {
+  // Return cached research if available for this URL
+  if (cachedResearch && cachedResearch.url === practiceUrl) {
+    console.log('Using cached research data');
+    return cachedResearch.data;
+  }
+
   try {
     // Configure the grounding tool for Google Search
     const groundingTool = {
@@ -11,9 +23,10 @@ const researchPracticeWithSearch = async (practiceUrl: string, practiceName: str
 
     const researchQuery = `${practiceName} dental practice ${practiceUrl} services team location contact information specialties technology awards community involvement`;
 
+    console.log('Fetching fresh research data from Gemini Search...');
     const response = await ai.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Research this dental practice comprehensively and provide detailed information: ${researchQuery}. 
+      contents: `Research this dental practice comprehensively and provide detailed information: ${researchQuery}.
 
       Please analyze and provide information about:
       1. Practice name and location (city, state, address)
@@ -35,7 +48,12 @@ const researchPracticeWithSearch = async (practiceUrl: string, practiceName: str
       },
     });
 
-    return response.text || 'No research results available';
+    const researchData = response.text || 'No research results available';
+
+    // Cache the research result
+    setCachedResearch({ url: practiceUrl, data: researchData });
+
+    return researchData;
   } catch (error) {
     console.warn('Failed to research practice with Gemini Search:', error);
     return `Research unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`;
@@ -54,11 +72,15 @@ if (!API_KEY) {
 const ai = new GoogleGenAI({ apiKey: API_KEY });
 
 
-export const generateContentPlan = async (
+// Helper function to generate content for a subset of weeks
+const generateWeeksBatch = async (
   practiceName: string,
   practiceUrl: string,
   startDate: string,
   postSchedule: 'MW' | 'TTH',
+  weekStart: number,
+  weekEnd: number,
+  practiceResearch: string,
   pastPostsContent?: string,
   onboardingContent?: string,
   specialInstructions?: string,
@@ -66,12 +88,11 @@ export const generateContentPlan = async (
   practiceLocation?: string,
   milestones?: string
 ): Promise<WeekPlan[]> => {
-  // Research the practice using Gemini Search API
-  const practiceResearch = await researchPracticeWithSearch(practiceUrl, practiceName, ai);
   const scheduleText = postSchedule === 'MW' ? 'Mondays and Wednesdays' : 'Tuesdays and Thursdays';
+  const numWeeks = weekEnd - weekStart + 1;
 
   const systemInstruction = `
-    Act as a social media marketing expert specializing in content for dental practices. Your task is to generate a 12-week social media content calendar.
+    Act as a social media marketing expert specializing in content for dental practices. Your task is to generate a ${numWeeks}-week social media content calendar (weeks ${weekStart} through ${weekEnd}).
 
     You will be given the practice name, website, content start date, posting schedule, comprehensive research about the practice, and potentially an onboarding document and a list of past posts.
 
@@ -109,7 +130,7 @@ export const generateContentPlan = async (
     **Practice Research Data:**
     ${practiceResearch}
 
-    Based on this research, create a content plan with 2 unique posts per week for 12 weeks that authentically represents this specific practice.
+    Based on this research, create a content plan with 2 unique posts per week for weeks ${weekStart} through ${weekEnd} (${numWeeks} weeks total) that authentically represents this specific practice.
 
     ${pastPostsContent ? `
     **Avoid Duplication:**
@@ -169,7 +190,7 @@ export const generateContentPlan = async (
   `;
 
   const userPrompt = `
-    Generate the 12-week content plan for the following practice:
+    Generate the ${numWeeks}-week content plan (weeks ${weekStart} through ${weekEnd}) for the following practice:
     - Practice Name: "${practiceName}"
     - Practice Website: "${practiceUrl}"
     - Content Plan Start Date: ${startDate}
@@ -212,9 +233,10 @@ ${pastPostsContent}
     const parsedData = JSON.parse(cleanedJson);
     
     if (parsedData && parsedData.weeks) {
-      // Post-process to ensure all hashtags are lowercase for consistency.
-      const processedWeeks = parsedData.weeks.map((week: WeekPlan) => ({
+      // Post-process to ensure all hashtags are lowercase and week numbers are correct
+      const processedWeeks = parsedData.weeks.map((week: WeekPlan, index: number) => ({
         ...week,
+        week: weekStart + index, // Ensure correct week numbering
         posts: week.posts.map(post => ({
           ...post,
           caption: post.caption.replace(/#(\w+)/g, (_match: string, tag: string) => `#${tag.toLowerCase()}`)
@@ -236,6 +258,84 @@ ${pastPostsContent}
   }
 };
 
+export const generateContentPlan = async (
+  practiceName: string,
+  practiceUrl: string,
+  startDate: string,
+  postSchedule: 'MW' | 'TTH',
+  pastPostsContent?: string,
+  onboardingContent?: string,
+  specialInstructions?: string,
+  practicePhone?: string,
+  practiceLocation?: string,
+  milestones?: string,
+  cachedResearch?: { url: string; data: string } | null,
+  setCachedResearch?: (cache: { url: string; data: string }) => void
+): Promise<WeekPlan[]> => {
+  // Research the practice using Gemini Search API (with caching)
+  const practiceResearch = await researchPracticeWithSearch(
+    practiceUrl,
+    practiceName,
+    ai,
+    cachedResearch || null,
+    setCachedResearch || (() => {})
+  );
+
+  console.log('Generating content plan in 3 parallel batches...');
+
+  // Generate 3 batches in parallel: weeks 1-4, 5-8, and 9-12
+  const [batch1, batch2, batch3] = await Promise.all([
+    generateWeeksBatch(
+      practiceName,
+      practiceUrl,
+      startDate,
+      postSchedule,
+      1,
+      4,
+      practiceResearch,
+      pastPostsContent,
+      onboardingContent,
+      specialInstructions,
+      practicePhone,
+      practiceLocation,
+      milestones
+    ),
+    generateWeeksBatch(
+      practiceName,
+      practiceUrl,
+      startDate,
+      postSchedule,
+      5,
+      8,
+      practiceResearch,
+      pastPostsContent,
+      onboardingContent,
+      specialInstructions,
+      practicePhone,
+      practiceLocation,
+      milestones
+    ),
+    generateWeeksBatch(
+      practiceName,
+      practiceUrl,
+      startDate,
+      postSchedule,
+      9,
+      12,
+      practiceResearch,
+      pastPostsContent,
+      onboardingContent,
+      specialInstructions,
+      practicePhone,
+      practiceLocation,
+      milestones
+    ),
+  ]);
+
+  // Combine all batches into a single array
+  return [...batch1, ...batch2, ...batch3];
+};
+
 
 export const generateSinglePost = async (
   practiceName: string,
@@ -245,10 +345,18 @@ export const generateSinglePost = async (
   postDate: string,
   instructions: string,
   onboardingContent?: string,
-  pastPostsContent?: string
+  pastPostsContent?: string,
+  cachedResearch?: { url: string; data: string } | null,
+  setCachedResearch?: (cache: { url: string; data: string }) => void
 ): Promise<Post> => {
-  // Research the practice using Gemini Search API
-  const practiceResearch = await researchPracticeWithSearch(practiceUrl, practiceName, ai);
+  // Research the practice using Gemini Search API (with caching)
+  const practiceResearch = await researchPracticeWithSearch(
+    practiceUrl,
+    practiceName,
+    ai,
+    cachedResearch || null,
+    setCachedResearch || (() => {})
+  );
   
   // Create a list of all other post titles and captions to avoid duplication
   const existingPostsText = currentPlan
