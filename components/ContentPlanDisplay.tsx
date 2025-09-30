@@ -11,17 +11,17 @@ interface ContentPlanDisplayProps {
   startDate: string;
   onContentChange: (weekIndex: number, postIndex: number, field: 'title' | 'caption', value: string) => void;
   onRegeneratePost: (weekIndex: number, postIndex: number, instructions: string) => void;
-  regeneratingPost: { weekIndex: number; postIndex: number; } | null;
+  regeneratingPosts: Set<string>;
 }
 
-export const ContentPlanDisplay: React.FC<ContentPlanDisplayProps> = ({ 
-  contentPlan, 
-  practiceName, 
-  postSchedule, 
-  startDate, 
+export const ContentPlanDisplay: React.FC<ContentPlanDisplayProps> = ({
+  contentPlan,
+  practiceName,
+  postSchedule,
+  startDate,
   onContentChange,
   onRegeneratePost,
-  regeneratingPost
+  regeneratingPosts
 }) => {
 
   const handleDownload = () => {
@@ -65,8 +65,8 @@ export const ContentPlanDisplay: React.FC<ContentPlanDisplayProps> = ({
             {weekData.posts.map((post, postIndex) => {
               const postDate = calculatePostDate(startDate, weekIndex, postIndex, postSchedule);
               const formattedDate = postDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-              const isRegenerating = regeneratingPost?.weekIndex === weekIndex && regeneratingPost?.postIndex === postIndex;
-              const isAnyRegenerating = regeneratingPost !== null;
+              const postKey = `${weekIndex}-${postIndex}`;
+              const isRegenerating = regeneratingPosts.has(postKey);
 
               return (
                 <PostCard
@@ -78,7 +78,6 @@ export const ContentPlanDisplay: React.FC<ContentPlanDisplayProps> = ({
                   onContentChange={onContentChange}
                   onRegenerate={onRegeneratePost}
                   isRegenerating={isRegenerating}
-                  isAnyRegenerating={isAnyRegenerating}
                 />
               );
             })}

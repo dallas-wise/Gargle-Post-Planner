@@ -26,8 +26,8 @@ const App: React.FC = () => {
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   
-  // State for regenerating a single post
-  const [regeneratingPost, setRegeneratingPost] = useState<{ weekIndex: number; postIndex: number } | null>(null);
+  // State for tracking multiple regenerating posts
+  const [regeneratingPosts, setRegeneratingPosts] = useState<Set<string>>(new Set());
   // State to hold the text content of the uploaded files
   const [onboardingContent, setOnboardingContent] = useState<string | undefined>();
   const [pastPostsContent, setPastPostsContent] = useState<string | undefined>();
@@ -123,12 +123,15 @@ const App: React.FC = () => {
   const handleRegeneratePost = useCallback(async (weekIndex: number, postIndex: number, instructions: string) => {
     if (!contentPlan) return;
 
-    setRegeneratingPost({ weekIndex, postIndex });
+    const postKey = `${weekIndex}-${postIndex}`;
+
+    // Add this post to the regenerating set
+    setRegeneratingPosts(prev => new Set(prev).add(postKey));
     setError(null);
 
     try {
       const postDate = calculatePostDate(startDate, weekIndex, postIndex, postSchedule);
-      
+
       const newPost = await generateSinglePost(
         practiceName,
         practiceUrl,
@@ -154,9 +157,14 @@ const App: React.FC = () => {
       setError(`Failed to regenerate post. ${errorMessage}`);
       console.error(err);
     } finally {
-      setRegeneratingPost(null);
+      // Remove this post from the regenerating set
+      setRegeneratingPosts(prev => {
+        const next = new Set(prev);
+        next.delete(postKey);
+        return next;
+      });
     }
-  }, [practiceName, practiceUrl, startDate, postSchedule, contentPlan, onboardingContent, pastPostsContent]);
+  }, [practiceName, practiceUrl, startDate, postSchedule, contentPlan, onboardingContent, pastPostsContent, cachedResearch]);
 
 
   return (
@@ -203,7 +211,7 @@ const App: React.FC = () => {
                   startDate={startDate}
                   onContentChange={handleContentPlanChange}
                   onRegeneratePost={handleRegeneratePost}
-                  regeneratingPost={regeneratingPost}
+                  regeneratingPosts={regeneratingPosts}
                 />
               </div>
             )}
