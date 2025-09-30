@@ -66,17 +66,19 @@ export const ContentPlanDisplay: React.FC<ContentPlanDisplayProps> = ({
               const postDate = calculatePostDate(startDate, weekIndex, postIndex, postSchedule);
               const formattedDate = postDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
               const isRegenerating = regeneratingPost?.weekIndex === weekIndex && regeneratingPost?.postIndex === postIndex;
-              
+              const isAnyRegenerating = regeneratingPost !== null;
+
               return (
-                <PostCard 
-                  key={postIndex} 
-                  post={post} 
+                <PostCard
+                  key={postIndex}
+                  post={post}
                   postDate={formattedDate}
                   weekIndex={weekIndex}
                   postIndex={postIndex}
                   onContentChange={onContentChange}
                   onRegenerate={onRegeneratePost}
                   isRegenerating={isRegenerating}
+                  isAnyRegenerating={isAnyRegenerating}
                 />
               );
             })}
