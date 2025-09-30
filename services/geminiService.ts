@@ -87,8 +87,9 @@ export const generateContentPlan = async (
     **VERIFIED PRACTICE CONTACT INFORMATION:**
     ${practicePhone ? `Phone: ${practicePhone}` : ''}
     ${practiceLocation ? `Location: ${practiceLocation}` : ''}
-    
+
     IMPORTANT: Use ONLY the contact information provided above in any posts that include contact details. Do not use or reference any other phone numbers or locations you may find in the research data.
+    ${practiceLocation ? `\n\nNOTE: If the practice has multiple locations, all posts should be specifically for the ${practiceLocation} location. Reference this specific location when mentioning the practice location in posts.` : ''}
     ` : ''}
 
     **CONTENT RESTRICTIONS:**

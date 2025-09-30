@@ -119,12 +119,15 @@ export const PracticeInfoForm: React.FC<PracticeInfoFormProps> = ({
             <label htmlFor="practiceLocation" className="block text-sm font-medium text-gray-700 mb-1">
               Practice Location (Optional)
             </label>
+            <p className="text-sm text-gray-500 mb-2">
+              If the practice has multiple locations, specify which location these posts are for.
+            </p>
             <input
               type="text"
               id="practiceLocation"
               value={practiceLocation}
               onChange={(e) => setPracticeLocation(e.target.value)}
-              placeholder="e.g., Downtown Seattle, WA"
+              placeholder="e.g., Downtown Seattle, WA or Bellevue Office"
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white text-gray-900 placeholder:text-gray-400"
             />
           </div>
