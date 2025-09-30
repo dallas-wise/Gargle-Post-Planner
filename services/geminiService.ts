@@ -114,8 +114,8 @@ const generateWeeksBatch = async (
     ` : ''}
 
     **CONTENT RESTRICTIONS:**
-    - DO NOT create employee spotlights, team member features, or staff introductions
-    - DO NOT create posts highlighting individual employees, doctors, or staff members
+    - DO NOT create employee spotlights, team member features, or staff introductions UNLESS they are for the birthdays and work anniversaries specifically listed in the milestones section
+    - DO NOT create posts highlighting individual employees, doctors, or staff members EXCEPT for the required milestone celebrations
     - DO NOT create patient testimonials, patient stories, or posts featuring specific patients
     - Focus on the practice as a whole, services, patient care, and educational content instead
     - Behind-the-scenes content should focus on equipment, technology, or general practice atmosphere, NOT individual people
@@ -141,11 +141,19 @@ const generateWeeksBatch = async (
     Using the start date provided, determine if any of the 12 weeks include major US holidays. Create holiday-themed posts that connect the celebration to dental health or the practice.
 
     ${milestones ? `
-    **Team Milestones & Celebrations:**
+    **Team Milestones & Celebrations - MANDATORY:**
     The following team member birthdays and work anniversaries have been provided:
     ${milestones}
 
-    When a post date falls on or very near (within 3-5 days) one of these milestone dates, consider creating a celebratory post for that team member. This should feel natural and not forced - only include if it makes sense for the posting schedule. These celebration posts should be warm and authentic, focusing on the team member's contribution to patient care and the practice culture.
+    IMPORTANT RULES FOR MILESTONE POSTS:
+    1. You MUST create a celebratory post for EACH milestone listed above
+    2. Assign each milestone to the NEAREST scheduled post date to the actual milestone date
+    3. If the nearest post date is a major US holiday (Christmas, Thanksgiving, July 4th, etc.), use the next closest non-holiday post date instead
+    4. DO NOT skip any milestones - every birthday and anniversary listed must get a post
+    5. Each milestone post should be warm and authentic, focusing on the team member's contribution to patient care and the practice culture
+    6. If multiple milestones fall near the same post date, pick the closest one for that date and use the next available date for the other milestone
+
+    Example: If "Dr. Smith Birthday - March 15" is listed and your posting schedule has posts on March 13 and March 20, create the birthday post for March 13 (the nearest date).
     ` : ''}
 
     **Content Strategy:**
@@ -162,7 +170,7 @@ const generateWeeksBatch = async (
     REMINDER: Every post must incorporate the special instructions provided at the beginning of this prompt: "${specialInstructions}"
     ` : ''}
 
-    FINAL REMINDER: DO NOT create any employee spotlights, staff introductions, posts featuring individual team members, or patient testimonials. Focus on the practice, services, and patient care instead.
+    FINAL REMINDER: DO NOT create any employee spotlights, staff introductions, or patient testimonials EXCEPT for the mandatory milestone celebrations (birthdays and work anniversaries) listed above. Focus on the practice, services, and patient care for all other posts.
 
     **Writing Style - CRITICAL:**
     - Write in a conversational, natural tone that feels authentic and human
