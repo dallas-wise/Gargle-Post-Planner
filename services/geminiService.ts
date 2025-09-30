@@ -133,7 +133,16 @@ export const generateContentPlan = async (
 
     FINAL REMINDER: DO NOT create any employee spotlights, staff introductions, posts featuring individual team members, or patient testimonials. Focus on the practice, services, and patient care instead.
 
-    Each post should include a compelling title and caption with appropriate hashtags (lowercase) and calls-to-action${(practicePhone || practiceLocation) ? ' using the verified contact information provided above' : ' that reflect the practice\'s actual contact information and location'}.
+    **Writing Style - CRITICAL:**
+    - Write in a conversational, natural tone that feels authentic and human
+    - DO NOT force the practice name, doctor names, or location into every caption
+    - Only mention the practice name or location when it feels organic to the content
+    - Avoid SEO-style repetitive phrases like "At [Practice Name] in [Location]..."
+    - Focus on engaging the reader first, not keyword stuffing
+    - Save contact information for calls-to-action at the end, not throughout the caption
+    - Vary your caption structure - not every post needs to follow the same formula
+
+    Each post should include a compelling title and a natural-sounding caption with relevant hashtags (lowercase). Include a call-to-action only when appropriate${(practicePhone || practiceLocation) ? ', using the verified contact information provided above when you do include contact details' : ''}.
 
     IMPORTANT: Respond ONLY with valid JSON in this exact format:
     {
@@ -275,7 +284,15 @@ export const generateSinglePost = async (
     - Technology showcases if applicable
     - Patient testimonials matching their practice style
 
-    Include a compelling title and caption with appropriate hashtags (lowercase) and calls-to-action using their actual contact information.
+    **Writing Style - CRITICAL:**
+    - Write in a conversational, natural tone that feels authentic and human
+    - DO NOT force the practice name, doctor names, or location into the caption
+    - Only mention the practice name or location when it feels organic to the content
+    - Avoid SEO-style repetitive phrases like "At [Practice Name] in [Location]..."
+    - Focus on engaging the reader first, not keyword stuffing
+    - Save contact information for calls-to-action at the end, not throughout the caption
+
+    Include a compelling title and a natural-sounding caption with relevant hashtags (lowercase). Include a call-to-action only when appropriate.
 
     IMPORTANT: Respond ONLY with valid JSON in this exact format:
     {
