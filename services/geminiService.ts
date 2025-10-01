@@ -126,6 +126,8 @@ const generateWeeksBatch = async (
   // REFERENCE DATA
   // ============================================================================
 
+  const normalizedSpecialInstructions = specialInstructions?.trim() || null;
+
   const referenceData = {
     onboardingDocument: onboardingContent || null,
     pastPosts: pastPostsContent || null,
@@ -134,7 +136,7 @@ const generateWeeksBatch = async (
       location: practiceLocation || null
     },
     teamMilestones: milestones || null,
-    userInstructions: specialInstructions || null,
+    userInstructions: normalizedSpecialInstructions,
     practiceInfo: practiceResearch
   };
 
@@ -233,7 +235,10 @@ Start Date: ${startDate}
 Posting Days: ${scheduleText}
 Weeks: ${weekStart} through ${weekEnd}
 
-Focus on unique, engaging content that connects with real people. Make it diverse and interesting!`;
+Focus on unique, engaging content that connects with real people. Make it diverse and interesting!${normalizedSpecialInstructions ? `
+
+Special instructions to follow exactly:
+${normalizedSpecialInstructions}` : ''}`;
 
 
   try {
@@ -355,6 +360,7 @@ export const generateSinglePost = async (
   aiProvider: AIProvider,
   onboardingContent?: string,
   pastPostsContent?: string,
+  specialInstructions?: string,
   cachedResearch?: { url: string; data: string } | null,
   setCachedResearch?: (cache: { url: string; data: string }) => void
 ): Promise<Post> => {
@@ -379,6 +385,10 @@ export const generateSinglePost = async (
     .filter(Boolean)
     .join('\n');
 
+  const normalizedGlobalInstructions = specialInstructions?.trim() || null;
+  const trimmedPostInstructions = instructions.trim();
+  const hasPostInstructions = trimmedPostInstructions.length > 0;
+
   // ============================================================================
   // NEW IMPROVED SINGLE POST PROMPT
   // ============================================================================
@@ -391,11 +401,14 @@ ${onboardingContent}
 ` : ''}${pastPostsContent ? `=== PAST POSTS (DO NOT DUPLICATE) ===
 ${pastPostsContent}
 
+` : ''}${normalizedGlobalInstructions ? `=== SPECIAL INSTRUCTIONS ===
+${normalizedGlobalInstructions}
+
 ` : ''}=== EXISTING POSTS IN PLAN (DO NOT DUPLICATE) ===
 ${existingPostsText}
 
-${instructions ? `=== USER INSTRUCTIONS ===
-${instructions}
+${hasPostInstructions ? `=== USER INSTRUCTIONS ===
+${trimmedPostInstructions}
 
 ` : ''}=== PRACTICE RESEARCH ===
 ${practiceResearch}
@@ -447,9 +460,17 @@ ${postDate}
 Return ONLY valid JSON:
 {"title": "Post Title", "caption": "Caption with #hashtags"}`;
 
+  const additionalGuidance = [
+    normalizedGlobalInstructions ? `Follow these ongoing special instructions: ${normalizedGlobalInstructions}` : null,
+    hasPostInstructions ? `Post-specific notes: ${trimmedPostInstructions}` : null,
+  ].filter(Boolean).join('\n');
+
   const userPrompt = `Generate ONE unique post for ${practiceName} on ${postDate}.
 
-Make it engaging and different from existing posts!`;
+Make it engaging and different from existing posts!${additionalGuidance ? `
+
+Additional guidance:
+${additionalGuidance}` : ''}`;
 
 
   try {

@@ -144,6 +144,7 @@ const App: React.FC = () => {
         aiProvider,
         onboardingContent,
         pastPostsContent,
+        specialInstructions,
         cachedResearch,
         setCachedResearch
       );
@@ -167,7 +168,7 @@ const App: React.FC = () => {
         return next;
       });
     }
-  }, [practiceName, practiceUrl, startDate, postSchedule, contentPlan, onboardingContent, pastPostsContent, cachedResearch, aiProvider]);
+  }, [practiceName, practiceUrl, startDate, postSchedule, contentPlan, onboardingContent, pastPostsContent, cachedResearch, aiProvider, specialInstructions]);
 
 
   return (
