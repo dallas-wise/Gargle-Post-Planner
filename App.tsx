@@ -22,7 +22,7 @@ const App: React.FC = () => {
   const [pastPostsFile, setPastPostsFile] = useState<File | null>(null);
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
   const [milestones, setMilestones] = useState<string>('');
-  const [aiProvider, setAiProvider] = useState<'openai' | 'gemini'>('openai');
+  const [aiProvider, setAiProvider] = useState<'openai' | 'gemini'>('gemini');
   const [contentPlan, setContentPlan] = useState<WeekPlan[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
