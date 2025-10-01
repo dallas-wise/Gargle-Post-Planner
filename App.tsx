@@ -22,6 +22,7 @@ const App: React.FC = () => {
   const [pastPostsFile, setPastPostsFile] = useState<File | null>(null);
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
   const [milestones, setMilestones] = useState<string>('');
+  const [aiProvider, setAiProvider] = useState<'openai' | 'gemini'>('openai');
   const [contentPlan, setContentPlan] = useState<WeekPlan[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -99,7 +100,8 @@ const App: React.FC = () => {
         practiceLocation,
         milestones,
         cachedResearch,
-        setCachedResearch
+        setCachedResearch,
+        aiProvider
       );
       setContentPlan(plan);
     } catch (err) {
@@ -142,7 +144,8 @@ const App: React.FC = () => {
         onboardingContent,
         pastPostsContent,
         cachedResearch,
-        setCachedResearch
+        setCachedResearch,
+        aiProvider
       );
 
       setContentPlan(currentPlan => {
@@ -196,6 +199,8 @@ const App: React.FC = () => {
               setSpecialInstructions={setSpecialInstructions}
               milestones={milestones}
               setMilestones={setMilestones}
+              aiProvider={aiProvider}
+              setAiProvider={setAiProvider}
               onSubmit={handleSubmit}
               isLoading={isLoading}
             />

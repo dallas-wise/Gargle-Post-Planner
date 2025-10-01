@@ -1,4 +1,5 @@
 import OpenAI from 'openai';
+import { GoogleGenAI } from '@google/genai';
 import type { WeekPlan, Post } from '../types';
 
 // Use OpenAI with web search to research the dental practice
@@ -59,17 +60,16 @@ Format the response as detailed, well-organized information that can be used to 
 
 // Read at build-time via Vite:
 const OPENAI_API_KEY = (import.meta as any).env?.VITE_OPENAI_API_KEY as string;
+const GEMINI_API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY as string;
 
-if (!OPENAI_API_KEY) {
-  throw new Error(
-    "Missing VITE_OPENAI_API_KEY. Add it to your local .env/.env.local and set it as a Build-time env var in DigitalOcean."
-  );
-}
-
-const openai = new OpenAI({
+// Initialize OpenAI if key is available
+const openai = OPENAI_API_KEY ? new OpenAI({
   apiKey: OPENAI_API_KEY,
   dangerouslyAllowBrowser: true // Required for client-side usage
-});
+}) : null;
+
+// Initialize Gemini if key is available
+const geminiAI = GEMINI_API_KEY ? new GoogleGenAI({ apiKey: GEMINI_API_KEY }) : null;
 
 
 // Helper function to generate content for a subset of weeks
@@ -86,7 +86,8 @@ const generateWeeksBatch = async (
   specialInstructions?: string,
   practicePhone?: string,
   practiceLocation?: string,
-  milestones?: string
+  milestones?: string,
+  aiProvider: 'openai' | 'gemini' = 'openai'
 ): Promise<WeekPlan[]> => {
   const scheduleText = postSchedule === 'MW' ? 'Mondays and Wednesdays' : 'Tuesdays and Thursdays';
   const numWeeks = weekEnd - weekStart + 1;
@@ -246,23 +247,44 @@ ${pastPostsContent}
 
 
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: systemInstruction
-        },
-        {
-          role: 'user',
-          content: userPrompt
-        }
-      ],
-      temperature: 0.7,
-      response_format: { type: 'json_object' }
-    });
+    let jsonText: string | null = null;
 
-    const jsonText = response.choices[0]?.message?.content;
+    if (aiProvider === 'openai') {
+      if (!openai) {
+        throw new Error("OpenAI API key is not configured. Please add VITE_OPENAI_API_KEY to your environment variables.");
+      }
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: systemInstruction
+          },
+          {
+            role: 'user',
+            content: userPrompt
+          }
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' }
+      });
+      jsonText = response.choices[0]?.message?.content;
+    } else {
+      // Use Gemini
+      if (!geminiAI) {
+        throw new Error("Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your environment variables.");
+      }
+      const response = await geminiAI.models.generateContent({
+        model: 'gemini-2.0-flash-exp',
+        contents: userPrompt,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.7,
+        },
+      });
+      jsonText = response.text;
+    }
+
     if (!jsonText) {
       throw new Error("Received an empty response from the AI.");
     }
@@ -309,7 +331,8 @@ export const generateContentPlan = async (
   practiceLocation?: string,
   milestones?: string,
   cachedResearch?: { url: string; data: string } | null,
-  setCachedResearch?: (cache: { url: string; data: string }) => void
+  setCachedResearch?: (cache: { url: string; data: string }) => void,
+  aiProvider: 'openai' | 'gemini' = 'openai'
 ): Promise<WeekPlan[]> => {
   // Research the practice using OpenAI with web search (with caching)
   const practiceResearch = await researchPracticeWithSearch(
@@ -336,7 +359,8 @@ export const generateContentPlan = async (
     specialInstructions,
     practicePhone,
     practiceLocation,
-    milestones
+    milestones,
+    aiProvider
   );
 
   return allWeeks;
@@ -353,7 +377,8 @@ export const generateSinglePost = async (
   onboardingContent?: string,
   pastPostsContent?: string,
   cachedResearch?: { url: string; data: string } | null,
-  setCachedResearch?: (cache: { url: string; data: string }) => void
+  setCachedResearch?: (cache: { url: string; data: string }) => void,
+  aiProvider: 'openai' | 'gemini' = 'openai'
 ): Promise<Post> => {
   // Research the practice using OpenAI with web search (with caching)
   const practiceResearch = await researchPracticeWithSearch(
@@ -454,23 +479,44 @@ export const generateSinglePost = async (
 
   
   try {
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4o',
-      messages: [
-        {
-          role: 'system',
-          content: systemInstruction
-        },
-        {
-          role: 'user',
-          content: userPrompt
-        }
-      ],
-      temperature: 0.8,
-      response_format: { type: 'json_object' }
-    });
+    let jsonText: string | null = null;
 
-    const jsonText = response.choices[0]?.message?.content;
+    if (aiProvider === 'openai') {
+      if (!openai) {
+        throw new Error("OpenAI API key is not configured. Please add VITE_OPENAI_API_KEY to your environment variables.");
+      }
+      const response = await openai.chat.completions.create({
+        model: 'gpt-4o',
+        messages: [
+          {
+            role: 'system',
+            content: systemInstruction
+          },
+          {
+            role: 'user',
+            content: userPrompt
+          }
+        ],
+        temperature: 0.8,
+        response_format: { type: 'json_object' }
+      });
+      jsonText = response.choices[0]?.message?.content;
+    } else {
+      // Use Gemini
+      if (!geminiAI) {
+        throw new Error("Gemini API key is not configured. Please add VITE_GEMINI_API_KEY to your environment variables.");
+      }
+      const response = await geminiAI.models.generateContent({
+        model: 'gemini-2.0-flash-exp',
+        contents: userPrompt,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.8,
+        },
+      });
+      jsonText = response.text;
+    }
+
     if (!jsonText) {
       throw new Error("Received an empty response from the AI when regenerating post.");
     }
@@ -488,7 +534,7 @@ export const generateSinglePost = async (
     }
 
   } catch (error) {
-    console.error("OpenAI API call failed during single post regeneration:", error);
+    console.error(`${aiProvider.toUpperCase()} API call failed during single post regeneration:`, error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     throw new Error(`Failed to regenerate post. Details: ${errorMessage}`);
   }
