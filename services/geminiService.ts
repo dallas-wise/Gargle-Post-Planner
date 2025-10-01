@@ -91,96 +91,139 @@ const generateWeeksBatch = async (
 ): Promise<WeekPlan[]> => {
   const scheduleText = postSchedule === 'MW' ? 'Mondays and Wednesdays' : 'Tuesdays and Thursdays';
   const numWeeks = weekEnd - weekStart + 1;
+  const totalPosts = numWeeks * 2;
 
-  const systemInstruction = `You are a social media content creator for dental practices. Generate a ${numWeeks}-week content calendar (weeks ${weekStart}-${weekEnd}) with 2 posts per week.
+  // ============================================================================
+  // REFERENCE DATA - Available for use in your prompt below
+  // ============================================================================
 
-**PRACTICE INFORMATION:**
-${practiceResearch}
+  const referenceData = {
+    // Client's onboarding document (if provided)
+    onboardingDocument: onboardingContent || null,
 
-${onboardingContent ? `**PRIMARY SOURCE - ONBOARDING DOCUMENT:**
-${onboardingContent}
-` : ''}
+    // Past posts to avoid duplicating (if provided)
+    pastPosts: pastPostsContent || null,
 
-${(practicePhone || practiceLocation) ? `**VERIFIED CONTACT INFO (use ONLY these):**
-${practicePhone ? `Phone: ${practicePhone}` : ''}
-${practiceLocation ? `Location: ${practiceLocation}` : ''}
-` : ''}
+    // Verified contact information
+    contactInfo: {
+      phone: practicePhone || null,
+      location: practiceLocation || null
+    },
 
-${specialInstructions ? `**SPECIAL INSTRUCTIONS (MANDATORY FOR ALL POSTS):**
-${specialInstructions}
-` : ''}
+    // Team birthdays and work anniversaries
+    teamMilestones: milestones || null,
+
+    // Special instructions from user
+    userInstructions: specialInstructions || null,
+
+    // Practice research from web search
+    practiceInfo: practiceResearch
+  };
+
+  // ============================================================================
+  // YOUR CUSTOM PROMPT GOES HERE
+  // ============================================================================
+
+  const systemInstruction = `
+${referenceData.onboardingDocument ? `CLIENT ONBOARDING DOCUMENT:
+${referenceData.onboardingDocument}
+
+` : ''}${referenceData.pastPosts ? `PAST POSTS (DO NOT DUPLICATE THESE):
+${referenceData.pastPosts}
+
+` : ''}${referenceData.contactInfo.phone ? `PRACTICE PHONE: ${referenceData.contactInfo.phone}
+` : ''}${referenceData.contactInfo.location ? `PRACTICE LOCATION: ${referenceData.contactInfo.location}
+` : ''}${referenceData.teamMilestones ? `TEAM BIRTHDAYS & WORK ANNIVERSARIES:
+${referenceData.teamMilestones}
+
+` : ''}${referenceData.userInstructions ? `SPECIAL INSTRUCTIONS:
+${referenceData.userInstructions}
+
+` : ''}PRACTICE RESEARCH:
+${referenceData.practiceInfo}
 
 ---
-**CRITICAL RULES:**
 
-1. **HOLIDAYS** - Calculate exact dates based on start date provided:
-   - Post holiday content ON the holiday or 1 day before
-   - Holidays: Christmas (12/25), Thanksgiving (4th Thu Nov), New Year (1/1), July 4th, Halloween (10/31), Valentine's (2/14), Mother's/Father's Day, Easter, Memorial/Labor Day
-   - Example: If Christmas 12/25 falls between post dates 12/23 and 12/26, use 12/23 (closest before)
-   - ONE post per holiday only
+You are a senior social-media strategist for dental practices. Using ONLY the information above (onboarding doc, past posts to avoid, verified contact info, milestones, special instructions, and practice research), create a 12-week content calendar for this practice.
 
-2. ${milestones ? `**MILESTONES (MANDATORY)** - These specific dates MUST get posts:
-${milestones}
+Goals:
 
-FOR EACH milestone listed:
-- Calculate which post date is NEAREST to that milestone date
-- Create exactly ONE post for that milestone on the nearest date
-- If nearest date is a major holiday, use next closest date
-- Mark each milestone as "used" to avoid duplicates
-- Do NOT skip any milestone - every one must get exactly one post
+Drive appointment requests and recall visits.
 
-Example: "John Birthday - Nov 30"
-- Post dates: Nov 28, Dec 1, Dec 5
-- Use Dec 1 (closest to Nov 30)
-- Do NOT create another John birthday post anywhere else
-` : 'No team milestones provided.'}
+Educate local patients and highlight differentiators (technology, specialties, philosophy).
 
-3. **CONTENT VARIETY** - NO REPETITION:
-   - Track every topic you use
-   - Each of the 24 posts must be completely different
-   - If you mention "digital impressions" once, NEVER mention it again
-   - Rotate: education, services, technology, community, seasonal tips, fun facts
-   - Different service each time: cleaning, whitening, implants, orthodontics, cosmetic, emergency, pediatric, etc.
+Stay compliant (no medical diagnosis, no guarantees, no PHI/identifiable patient details).
 
-4. **NO EMPLOYEE/PATIENT POSTS** except for the specific milestones listed above
+Constraints & style:
 
-5. **WRITING STYLE:**
-   - Conversational and natural
-   - Don't force practice name/location into every post
-   - Vary structure - not every post should sound the same
-   - Hashtags in lowercase
+Brand voice: mirror the voice implied by the onboarding document and research (friendly, trustworthy, community-focused; avoid hype).
 
-${pastPostsContent ? `**PAST POSTS TO AVOID:**
-${pastPostsContent}
-` : ''}
+Variety mix across the plan (rough guideline each week or across adjacent weeks):
 
-**OUTPUT FORMAT (JSON only):**
+Education/Prevention tips,
+
+Service spotlight (specific procedures, benefits, candid FAQs),
+
+Social proof/community (team culture, community involvement, non-identifying testimonials or reviews),
+
+Engagement prompts (polls/questions/fun facts),
+
+Promotions/special programs ONLY if present in research/onboarding.
+
+Integrate team milestones (birthdays/anniversaries) during the appropriate week; if the exact date isn't a posting day, schedule the milestone post on the nearest scheduled day that week.
+
+Localize where appropriate (reference city/area from research), but never invent details that aren't supported by the inputs.
+
+Compliance: avoid clinical claims or before/after promises; use general benefits and encouragement to book a consult. Do not mention prices unless provided. No PHI.
+
+Each post must be unique, non-repetitive, and must NOT duplicate anything in "PAST POSTS" (and should minimize overlap in themes and wording across the 12 weeks).
+
+Output requirements per post:
+
+title: ≤ 60 characters; concise, specific, scroll-stopping.
+
+caption: 80–180 words, clear and helpful, with ONE natural call-to-action (e.g., "Call us" or "Book online") using the verified phone/location if provided. Include 3–7 relevant hashtags mixing service + local terms (they'll be lowercased later). Emojis optional and tasteful (0–3).
+
+Do not include links unless the practice website was provided; prefer "Call us" or "Book a visit" CTAs.
+
+No image prompts/notes outside the caption (schema only allows title/caption).
+
+Scheduling rules:
+
+Generate exactly ${totalPosts} posts across ${numWeeks} weeks for weeks ${weekStart}-${weekEnd}, assuming two posts on the specified posting days.
+
+If a major seasonal/holiday date falls in range and is clearly relevant to the location, you may theme one post that week (still follow the variety mix).
+
+Return ONLY the JSON in the required format and nothing else (no prose, no markdown, no comments).
+
+---
+
+REQUIRED JSON OUTPUT FORMAT:
 {
   "weeks": [
     {
       "week": 1,
       "posts": [
-        {"title": "Post Title", "caption": "Caption text #hashtag"},
-        {"title": "Post Title", "caption": "Caption text #hashtag"}
+        {"title": "Post Title", "caption": "Caption text with #hashtags"},
+        {"title": "Post Title", "caption": "Caption text with #hashtags"}
       ]
     }
   ]
 }`;
 
-  const userPrompt = `Practice: ${practiceName}
+  // ============================================================================
+  // USER PROMPT - Keep this simple
+  // ============================================================================
+
+  const userPrompt = `
+Practice Name: ${practiceName}
 Website: ${practiceUrl}
 Start Date: ${startDate}
-Post Days: ${scheduleText}
+Posting Days: ${scheduleText}
+Weeks to Generate: ${weekStart} through ${weekEnd} (${totalPosts} total posts)
 
-Generate weeks ${weekStart}-${weekEnd} (${numWeeks} weeks = ${numWeeks * 2} posts total).
-
-IMPORTANT: Calculate the exact posting dates based on the start date and schedule. For example:
-- If start date is 2024-12-01 (Sunday) and schedule is "Tuesdays & Thursdays"
-- Week 1 posts: Dec 3 (Tue), Dec 5 (Thu)
-- Week 2 posts: Dec 10 (Tue), Dec 12 (Thu)
-- Use these exact dates to determine which posts should be for holidays or milestones.
-
-Create the JSON response now.`;
+Generate the content calendar now.
+`;
 
 
   try {
@@ -325,7 +368,7 @@ export const generateSinglePost = async (
     cachedResearch || null,
     setCachedResearch || (() => {})
   );
-  
+
   // Create a list of all other post titles and captions to avoid duplication
   const existingPostsText = currentPlan
     .flatMap((week, wIndex) =>
@@ -333,46 +376,103 @@ export const generateSinglePost = async (
         if (wIndex === postToReplace.weekIndex && pIndex === postToReplace.postIndex) {
           return null; // Don't include the post we're replacing
         }
-        return `- Title: ${post.title}\n  Caption: ${post.caption}`;
+        return `- ${post.title}: ${post.caption}`;
       })
     )
-    .filter(Boolean) // Remove null entries
+    .filter(Boolean)
     .join('\n');
 
-  const systemInstruction = `Generate ONE unique social media post for a dental practice.
+  // ============================================================================
+  // REFERENCE DATA - Available for use in your prompt below
+  // ============================================================================
 
-**PRACTICE INFO:**
-${practiceResearch}
+  const referenceData = {
+    // Client's onboarding document (if provided)
+    onboardingDocument: onboardingContent || null,
 
-${onboardingContent ? `**ONBOARDING DATA:**
-${onboardingContent}
-` : ''}
+    // Past posts to avoid duplicating (if provided)
+    pastPosts: pastPostsContent || null,
 
-**POST DATE:** ${postDate}
-Check if this is a major holiday and create holiday content if appropriate.
+    // Existing posts in current plan (to avoid duplication)
+    existingPosts: existingPostsText,
 
-${instructions ? `**USER INSTRUCTIONS:** ${instructions}` : ''}
+    // User's regeneration instructions
+    userInstructions: instructions || null,
 
-**RULES:**
-- Must be completely different from existing posts
-- Conversational, natural tone
-- Don't force practice name/location
-- Vary content: education, services, technology, community, tips
-- Hashtags lowercase
+    // Practice research from web search
+    practiceInfo: practiceResearch,
 
-**AVOID THESE TOPICS (already used):**
-${existingPostsText}
+    // Date for this post
+    postDate: postDate
+  };
 
-${pastPostsContent ? `**PAST POSTS (don't repeat):**
-${pastPostsContent}
-` : ''}
+  // ============================================================================
+  // YOUR CUSTOM PROMPT FOR SINGLE POST REGENERATION GOES HERE
+  // ============================================================================
 
-**OUTPUT (JSON only):**
-{"title": "Title", "caption": "Caption #hashtags"}`;
+  const systemInstruction = `
+${referenceData.onboardingDocument ? `CLIENT ONBOARDING DOCUMENT:
+${referenceData.onboardingDocument}
 
-  const userPrompt = `Practice: ${practiceName}
-Date: ${postDate}
-Create one unique post now.`;
+` : ''}${referenceData.pastPosts ? `PAST POSTS (DO NOT DUPLICATE):
+${referenceData.pastPosts}
+
+` : ''}EXISTING POSTS IN CURRENT PLAN (DO NOT DUPLICATE):
+${referenceData.existingPosts}
+
+${referenceData.userInstructions ? `USER INSTRUCTIONS FOR THIS POST:
+${referenceData.userInstructions}
+
+` : ''}PRACTICE RESEARCH:
+${referenceData.practiceInfo}
+
+POST DATE: ${referenceData.postDate}
+
+---
+
+You are a senior social-media strategist for dental practices. Using ONLY the information above (onboarding doc, past posts to avoid, existing posts in the current plan, user instructions, practice research, and the provided post date), write ONE replacement post for the specified date.
+
+Goals:
+
+Fit naturally within the existing 12-week plan while avoiding duplication with "PAST POSTS" and "EXISTING POSTS."
+
+Drive appointment interest and educate locals about this practice's differentiators.
+
+Tailoring & style:
+
+Match brand voice from the onboarding/research.
+
+If the POST DATE aligns with a reasonable seasonal/holiday or with a listed milestone, tastefully incorporate it; otherwise ignore.
+
+Compliance: no diagnosis, no guarantees, no PHI; no prices unless provided.
+
+Output requirements:
+
+title: ≤ 60 characters; specific and compelling.
+
+caption: 80–180 words with ONE natural CTA (call or book). Use verified phone/location if provided. Include 3–7 relevant hashtags (service + local; they'll be lowercased later). Emojis optional (0–3).
+
+Must be unique and not overlap wording/themes already present in "EXISTING POSTS."
+
+Return ONLY the JSON object in the required format and nothing else (no prose, no markdown, no comments).
+
+---
+
+REQUIRED JSON OUTPUT FORMAT:
+{"title": "Post Title", "caption": "Caption text with #hashtags"}
+`;
+
+  // ============================================================================
+  // USER PROMPT - Keep this simple
+  // ============================================================================
+
+  const userPrompt = `
+Practice Name: ${practiceName}
+Website: ${practiceUrl}
+Post Date: ${postDate}
+
+Generate one unique post now.
+`;
 
   
   try {
