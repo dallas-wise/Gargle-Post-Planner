@@ -240,14 +240,13 @@ Focus on unique, engaging content that connects with real people. Make it divers
     let jsonText: string;
 
     if (aiProvider === 'openai') {
-      // Use OpenAI GPT-5
+      // Use OpenAI GPT-5 (temperature must be 1, the default)
       const response = await openaiClient.chat.completions.create({
         model: 'gpt-5',
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.7,
         response_format: { type: 'json_object' }
       });
 
@@ -454,14 +453,13 @@ Make it engaging and different from existing posts!`;
     let jsonText: string;
 
     if (aiProvider === 'openai') {
-      // Use OpenAI GPT-5
+      // Use OpenAI GPT-5 (temperature must be 1, the default)
       const response = await openaiClient.chat.completions.create({
         model: 'gpt-5',
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: userPrompt }
         ],
-        temperature: 0.8,
         response_format: { type: 'json_object' }
       });
 
