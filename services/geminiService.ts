@@ -240,17 +240,20 @@ Focus on unique, engaging content that connects with real people. Make it divers
     let jsonText: string;
 
     if (aiProvider === 'openai') {
-      // Use OpenAI GPT-5 (temperature must be 1, the default)
+      // Use OpenAI GPT-4o (gpt-5 may not be available yet)
+      console.log('Generating with OpenAI GPT-4o...');
       const response = await openaiClient.chat.completions.create({
-        model: 'gpt-5',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: userPrompt }
         ],
+        temperature: 0.7,
         response_format: { type: 'json_object' }
       });
 
       jsonText = response.choices[0]?.message?.content || '';
+      console.log('OpenAI response received');
     } else {
       // Use Gemini
       const response = await geminiAI.models.generateContent({
@@ -453,17 +456,20 @@ Make it engaging and different from existing posts!`;
     let jsonText: string;
 
     if (aiProvider === 'openai') {
-      // Use OpenAI GPT-5 (temperature must be 1, the default)
+      // Use OpenAI GPT-4o
+      console.log('Regenerating post with OpenAI GPT-4o...');
       const response = await openaiClient.chat.completions.create({
-        model: 'gpt-4.1-mini',
+        model: 'gpt-4o',
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: userPrompt }
         ],
+        temperature: 0.8,
         response_format: { type: 'json_object' }
       });
 
       jsonText = response.choices[0]?.message?.content || '';
+      console.log('OpenAI response received');
     } else {
       // Use Gemini
       const response = await geminiAI.models.generateContent({
