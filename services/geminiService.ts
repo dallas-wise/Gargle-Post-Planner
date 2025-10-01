@@ -92,158 +92,95 @@ const generateWeeksBatch = async (
   const scheduleText = postSchedule === 'MW' ? 'Mondays and Wednesdays' : 'Tuesdays and Thursdays';
   const numWeeks = weekEnd - weekStart + 1;
 
-  const systemInstruction = `
-    Act as a social media marketing expert specializing in content for dental practices. Your task is to generate a ${numWeeks}-week social media content calendar (weeks ${weekStart} through ${weekEnd}).
+  const systemInstruction = `You are a social media content creator for dental practices. Generate a ${numWeeks}-week content calendar (weeks ${weekStart}-${weekEnd}) with 2 posts per week.
 
-    You will be given the practice name, website, content start date, posting schedule, comprehensive research about the practice, and potentially an onboarding document and a list of past posts.
+**PRACTICE INFORMATION:**
+${practiceResearch}
 
-    ${specialInstructions ? `
-    !!!! CRITICAL SPECIAL INSTRUCTIONS - MUST FOLLOW FOR ALL POSTS !!!!
-    ${specialInstructions}
-    
-    REMINDER: These special instructions above are MANDATORY and must be applied to EVERY single post you create. Do not ignore these instructions.
-    !!!! END CRITICAL INSTRUCTIONS !!!!
-    ` : ''}
+${onboardingContent ? `**PRIMARY SOURCE - ONBOARDING DOCUMENT:**
+${onboardingContent}
+` : ''}
 
-    ${(practicePhone || practiceLocation) ? `
-    **VERIFIED PRACTICE CONTACT INFORMATION:**
-    ${practicePhone ? `Phone: ${practicePhone}` : ''}
-    ${practiceLocation ? `Location: ${practiceLocation}` : ''}
+${(practicePhone || practiceLocation) ? `**VERIFIED CONTACT INFO (use ONLY these):**
+${practicePhone ? `Phone: ${practicePhone}` : ''}
+${practiceLocation ? `Location: ${practiceLocation}` : ''}
+` : ''}
 
-    IMPORTANT: Use ONLY the contact information provided above in any posts that include contact details. Do not use or reference any other phone numbers or locations you may find in the research data.
-    ${practiceLocation ? `\n\nNOTE: If the practice has multiple locations, all posts should be specifically for the ${practiceLocation} location. Reference this specific location when mentioning the practice location in posts.` : ''}
-    ` : ''}
+${specialInstructions ? `**SPECIAL INSTRUCTIONS (MANDATORY FOR ALL POSTS):**
+${specialInstructions}
+` : ''}
 
-    **CONTENT RESTRICTIONS:**
-    - DO NOT create employee spotlights, team member features, or staff introductions UNLESS they are for the birthdays and work anniversaries specifically listed in the milestones section
-    - DO NOT create posts highlighting individual employees, doctors, or staff members EXCEPT for the required milestone celebrations
-    - DO NOT create patient testimonials, patient stories, or posts featuring specific patients
-    - Focus on the practice as a whole, services, patient care, and educational content instead
-    - Behind-the-scenes content should focus on equipment, technology, or general practice atmosphere, NOT individual people
+---
+**CRITICAL RULES:**
 
-    **Research-Based Content Creation:**
-    ${onboardingContent ? `
-    An onboarding document has been provided as your PRIMARY source of truth. Use the research data as supplementary information to enhance and validate the onboarding content.
-    ` : `
-    Use the comprehensive research data provided about this dental practice to create authentic, personalized content that reflects their actual services, team, location, and brand personality.
-    `}
+1. **HOLIDAYS** - Calculate exact dates based on start date provided:
+   - Post holiday content ON the holiday or 1 day before
+   - Holidays: Christmas (12/25), Thanksgiving (4th Thu Nov), New Year (1/1), July 4th, Halloween (10/31), Valentine's (2/14), Mother's/Father's Day, Easter, Memorial/Labor Day
+   - Example: If Christmas 12/25 falls between post dates 12/23 and 12/26, use 12/23 (closest before)
+   - ONE post per holiday only
 
-    **Practice Research Data:**
-    ${practiceResearch}
+2. ${milestones ? `**MILESTONES (MANDATORY)** - These specific dates MUST get posts:
+${milestones}
 
-    Based on this research, create a content plan with 2 unique posts per week for weeks ${weekStart} through ${weekEnd} (${numWeeks} weeks total) that authentically represents this specific practice.
+FOR EACH milestone listed:
+- Calculate which post date is NEAREST to that milestone date
+- Create exactly ONE post for that milestone on the nearest date
+- If nearest date is a major holiday, use next closest date
+- Mark each milestone as "used" to avoid duplicates
+- Do NOT skip any milestone - every one must get exactly one post
 
-    ${pastPostsContent ? `
-    **Avoid Duplication:**
-    The user has provided their previous posts. DO NOT generate content that duplicates or closely resembles these past posts. Create fresh, original content.
-    ` : ''}
+Example: "John Birthday - Nov 30"
+- Post dates: Nov 28, Dec 1, Dec 5
+- Use Dec 1 (closest to Nov 30)
+- Do NOT create another John birthday post anywhere else
+` : 'No team milestones provided.'}
 
-    **Holiday Content - CRITICAL TIMING RULES:**
-    Using the start date provided, determine if any of the 12 weeks include major US holidays.
+3. **CONTENT VARIETY** - NO REPETITION:
+   - Track every topic you use
+   - Each of the 24 posts must be completely different
+   - If you mention "digital impressions" once, NEVER mention it again
+   - Rotate: education, services, technology, community, seasonal tips, fun facts
+   - Different service each time: cleaning, whitening, implants, orthodontics, cosmetic, emergency, pediatric, etc.
 
-    IMPORTANT HOLIDAY POSTING RULES:
-    1. Create holiday posts on the CLOSEST post date to the actual holiday, preferably ON the holiday or 1-2 days before
-    2. DO NOT post holiday content too early (e.g., don't post Christmas content a week before Christmas)
-    3. If a major holiday falls between two post dates, choose the date CLOSEST to the holiday
-    4. Major holidays include: Christmas (Dec 25), Thanksgiving (4th Thu in Nov), New Year's (Jan 1), July 4th, Halloween (Oct 31), Valentine's Day (Feb 14), Mother's Day, Father's Day, Easter, Memorial Day, Labor Day
-    5. Each holiday should only get ONE post - do not repeat holiday themes
-    6. Holiday posts should connect the celebration to dental health or the practice in a natural way
+4. **NO EMPLOYEE/PATIENT POSTS** except for the specific milestones listed above
 
-    Example: If Christmas is Dec 25 and your post dates are Dec 22, 24, 29, 31 - post Christmas content on Dec 24 (closest), NOT Dec 22 (too early)
+5. **WRITING STYLE:**
+   - Conversational and natural
+   - Don't force practice name/location into every post
+   - Vary structure - not every post should sound the same
+   - Hashtags in lowercase
 
-    ${milestones ? `
-    **Team Milestones & Celebrations - MANDATORY:**
-    The following team member birthdays and work anniversaries have been provided:
-    ${milestones}
+${pastPostsContent ? `**PAST POSTS TO AVOID:**
+${pastPostsContent}
+` : ''}
 
-    CRITICAL RULES FOR MILESTONE POSTS:
-    1. You MUST create exactly ONE celebratory post for EACH milestone listed above - NO DUPLICATES
-    2. Assign each milestone to the SINGLE NEAREST scheduled post date to the actual milestone date
-    3. If the nearest post date is a major US holiday (Christmas, Thanksgiving, July 4th, etc.), use the next closest non-holiday post date instead
-    4. DO NOT create multiple posts for the same milestone - each person gets exactly ONE birthday post or ONE anniversary post
-    5. Each milestone post should be warm and authentic, focusing on the team member's contribution to patient care and the practice culture
-    6. If multiple milestones fall near the same post date, assign the closest milestone to that date and use the next available date for other milestones
-    7. Keep track of which milestones you've already created posts for to avoid duplication
-
-    Example: If "Dr. Smith Birthday - March 15" is listed and your posting schedule has posts on March 13 and March 20, create the birthday post for March 13 (the nearest date). Do NOT create another birthday post for Dr. Smith on any other date.
-    ` : ''}
-
-    **Content Strategy & Variety - CRITICAL:**
-    Create HIGHLY VARIED content that showcases the practice's unique qualities. AVOID REPETITION at all costs.
-
-    Content categories to rotate through:
-    - Educational dental tips (oral hygiene, preventive care, dental health facts)
-    - Service highlights (different services each time - cleanings, whitening, implants, orthodontics, cosmetic, emergency care, etc.)
-    - Technology showcases (digital x-rays, 3D imaging, laser dentistry, intraoral cameras, etc.)
-    - Community engagement (local events, partnerships, charitable activities)
-    - Seasonal dental health tips (back-to-school, holidays, sports seasons, summer)
-    - Practice milestones or achievements
-    - Patient care philosophy and approach
-    - Fun dental facts and myths
-    - Before-and-after transformations (general, not specific patients)
-    - Office environment and technology features (NO individual staff members unless milestone)
-
-    IMPORTANT RULES FOR VARIETY:
-    1. DO NOT repeat the same topic, service, or technology across multiple posts
-    2. If you mention "digital impressions" or "no more goopy impressions" in one post, do NOT mention it again in any other post in the 12-week plan
-    3. Spread different topics throughout the weeks - don't cluster similar content together
-    4. Each post should feel unique and fresh, not like a variation of another post
-    5. Track what topics you've already covered and deliberately choose different angles for subsequent posts
-    6. Rotate between educational, promotional, community-focused, and engaging content styles
-
-    ${specialInstructions ? `
-    REMINDER: Every post must incorporate the special instructions provided at the beginning of this prompt: "${specialInstructions}"
-    ` : ''}
-
-    FINAL REMINDER: DO NOT create any employee spotlights, staff introductions, or patient testimonials EXCEPT for the mandatory milestone celebrations (birthdays and work anniversaries) listed above. Focus on the practice, services, and patient care for all other posts.
-
-    **Writing Style - CRITICAL:**
-    - Write in a conversational, natural tone that feels authentic and human
-    - DO NOT force the practice name, doctor names, or location into every caption
-    - Only mention the practice name or location when it feels organic to the content
-    - Avoid SEO-style repetitive phrases like "At [Practice Name] in [Location]..."
-    - Focus on engaging the reader first, not keyword stuffing
-    - Save contact information for calls-to-action at the end, not throughout the caption
-    - Vary your caption structure - not every post needs to follow the same formula
-
-    Each post should include a compelling title and a natural-sounding caption with relevant hashtags (lowercase). Include a call-to-action only when appropriate${(practicePhone || practiceLocation) ? ', using the verified contact information provided above when you do include contact details' : ''}.
-
-    IMPORTANT: Respond ONLY with valid JSON in this exact format:
+**OUTPUT FORMAT (JSON only):**
+{
+  "weeks": [
     {
-      "weeks": [
-        {
-          "week": 1,
-          "posts": [
-            {"title": "Post title", "caption": "Post caption with #hashtags"},
-            {"title": "Post title", "caption": "Post caption with #hashtags"}
-          ]
-        }
+      "week": 1,
+      "posts": [
+        {"title": "Post Title", "caption": "Caption text #hashtag"},
+        {"title": "Post Title", "caption": "Caption text #hashtag"}
       ]
     }
-  `;
+  ]
+}`;
 
-  const userPrompt = `
-    Generate the ${numWeeks}-week content plan (weeks ${weekStart} through ${weekEnd}) for the following practice:
-    - Practice Name: "${practiceName}"
-    - Practice Website: "${practiceUrl}"
-    - Content Plan Start Date: ${startDate}
-    - Posting Schedule: The two posts for each week should be scheduled for ${scheduleText}.
-    
-    Use the research data provided in the system instruction to create authentic, personalized content.
-    
-    ${onboardingContent ? `
----
-REFERENCE: CLIENT ONBOARDING DOCUMENT (PRIMARY SOURCE)
----
-${onboardingContent}
-    ` : ''}
-    ${pastPostsContent ? `
----
-REFERENCE: PREVIOUS USER POSTS (AVOID DUPLICATING THESE)
----
-${pastPostsContent}
-    ` : ''}
-  `;
+  const userPrompt = `Practice: ${practiceName}
+Website: ${practiceUrl}
+Start Date: ${startDate}
+Post Days: ${scheduleText}
+
+Generate weeks ${weekStart}-${weekEnd} (${numWeeks} weeks = ${numWeeks * 2} posts total).
+
+IMPORTANT: Calculate the exact posting dates based on the start date and schedule. For example:
+- If start date is 2024-12-01 (Sunday) and schedule is "Tuesdays & Thursdays"
+- Week 1 posts: Dec 3 (Tue), Dec 5 (Thu)
+- Week 2 posts: Dec 10 (Tue), Dec 12 (Thu)
+- Use these exact dates to determine which posts should be for holidays or milestones.
+
+Create the JSON response now.`;
 
 
   try {
@@ -402,80 +339,40 @@ export const generateSinglePost = async (
     .filter(Boolean) // Remove null entries
     .join('\n');
 
-  const systemInstruction = `
-    You are a social media marketing expert for dental practices. Your task is to generate a SINGLE, new, unique social media post.
+  const systemInstruction = `Generate ONE unique social media post for a dental practice.
 
-    You will be given comprehensive research about the practice, and potentially an onboarding document and a list of past posts. Use this information to create authentic content that reflects the practice's actual characteristics.
+**PRACTICE INFO:**
+${practiceResearch}
 
-    **Practice Research Data:**
-    ${practiceResearch}
+${onboardingContent ? `**ONBOARDING DATA:**
+${onboardingContent}
+` : ''}
 
-    **Research-Based Content Creation:**
-    ${onboardingContent ? `
-    The provided onboarding document is your PRIMARY source of truth. Use the research data to enhance and validate this information.
-    ` : `
-    Use the comprehensive research data to create content that authentically represents this specific dental practice.
-    `}
+**POST DATE:** ${postDate}
+Check if this is a major holiday and create holiday content if appropriate.
 
-    **Date-Specific Content:**
-    The post is for ${postDate}. Check if this date is on or near a major US holiday and create holiday-themed content if appropriate, connecting it to dental health.
+${instructions ? `**USER INSTRUCTIONS:** ${instructions}` : ''}
 
-    **Avoid Duplication:**
-    You MUST NOT create content similar to the existing posts in the current plan or the user's past posts. Create fresh, original content.
+**RULES:**
+- Must be completely different from existing posts
+- Conversational, natural tone
+- Don't force practice name/location
+- Vary content: education, services, technology, community, tips
+- Hashtags lowercase
 
-    **User Instructions:**
-    ${instructions ? `Follow these specific instructions: ${instructions}` : 'No special instructions provided.'}
+**AVOID THESE TOPICS (already used):**
+${existingPostsText}
 
-    Create a post that showcases the practice's unique qualities based on the research, such as:
-    - Educational content relevant to their specialties
-    - Service highlights using their actual offerings
-    - Community engagement reflecting their local involvement
-    - Technology showcases if applicable
-    - Patient testimonials matching their practice style
+${pastPostsContent ? `**PAST POSTS (don't repeat):**
+${pastPostsContent}
+` : ''}
 
-    **Writing Style - CRITICAL:**
-    - Write in a conversational, natural tone that feels authentic and human
-    - DO NOT force the practice name, doctor names, or location into the caption
-    - Only mention the practice name or location when it feels organic to the content
-    - Avoid SEO-style repetitive phrases like "At [Practice Name] in [Location]..."
-    - Focus on engaging the reader first, not keyword stuffing
-    - Save contact information for calls-to-action at the end, not throughout the caption
+**OUTPUT (JSON only):**
+{"title": "Title", "caption": "Caption #hashtags"}`;
 
-    Include a compelling title and a natural-sounding caption with relevant hashtags (lowercase). Include a call-to-action only when appropriate.
-
-    IMPORTANT: Respond ONLY with valid JSON in this exact format:
-    {
-      "title": "Post title",
-      "caption": "Post caption with #hashtags"
-    }
-  `;
-
-  const userPrompt = `
-    Generate a single, new social media post for:
-    - Practice Name: "${practiceName}"
-    - Practice Website: "${practiceUrl}"
-    - Post Date: ${postDate}
-
-    Use the research data provided in the system instruction to create authentic, personalized content.
-
-    ---
-    EXISTING POSTS IN THE CURRENT PLAN (DO NOT REPEAT THESE TOPICS):
-    ---
-    ${existingPostsText}
-
-    ${onboardingContent ? `
-    ---
-    REFERENCE: CLIENT ONBOARDING DOCUMENT (PRIMARY SOURCE)
-    ---
-    ${onboardingContent}
-    ` : ''}
-    ${pastPostsContent ? `
-    ---
-    REFERENCE: PREVIOUS USER POSTS (AVOID DUPLICATING THESE)
-    ---
-    ${pastPostsContent}
-    ` : ''}
-  `;
+  const userPrompt = `Practice: ${practiceName}
+Date: ${postDate}
+Create one unique post now.`;
 
   
   try {
