@@ -137,8 +137,18 @@ const generateWeeksBatch = async (
     The user has provided their previous posts. DO NOT generate content that duplicates or closely resembles these past posts. Create fresh, original content.
     ` : ''}
 
-    **Holiday Content:**
-    Using the start date provided, determine if any of the 12 weeks include major US holidays. Create holiday-themed posts that connect the celebration to dental health or the practice.
+    **Holiday Content - CRITICAL TIMING RULES:**
+    Using the start date provided, determine if any of the 12 weeks include major US holidays.
+
+    IMPORTANT HOLIDAY POSTING RULES:
+    1. Create holiday posts on the CLOSEST post date to the actual holiday, preferably ON the holiday or 1-2 days before
+    2. DO NOT post holiday content too early (e.g., don't post Christmas content a week before Christmas)
+    3. If a major holiday falls between two post dates, choose the date CLOSEST to the holiday
+    4. Major holidays include: Christmas (Dec 25), Thanksgiving (4th Thu in Nov), New Year's (Jan 1), July 4th, Halloween (Oct 31), Valentine's Day (Feb 14), Mother's Day, Father's Day, Easter, Memorial Day, Labor Day
+    5. Each holiday should only get ONE post - do not repeat holiday themes
+    6. Holiday posts should connect the celebration to dental health or the practice in a natural way
+
+    Example: If Christmas is Dec 25 and your post dates are Dec 22, 24, 29, 31 - post Christmas content on Dec 24 (closest), NOT Dec 22 (too early)
 
     ${milestones ? `
     **Team Milestones & Celebrations - MANDATORY:**
