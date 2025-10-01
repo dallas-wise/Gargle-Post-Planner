@@ -455,7 +455,7 @@ Make it engaging and different from existing posts!`;
     if (aiProvider === 'openai') {
       // Use OpenAI GPT-5 (temperature must be 1, the default)
       const response = await openaiClient.chat.completions.create({
-        model: 'gpt-5',
+        model: 'gpt-4.1-mini',
         messages: [
           { role: 'system', content: systemInstruction },
           { role: 'user', content: userPrompt }
