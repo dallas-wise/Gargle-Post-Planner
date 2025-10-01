@@ -1,11 +1,11 @@
-import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import type { WeekPlan, Post } from '../types';
 
-// Use Gemini Search API to research the dental practice
+// Use OpenAI with web search to research the dental practice
 const researchPracticeWithSearch = async (
   practiceUrl: string,
   practiceName: string,
-  ai: GoogleGenAI,
+  openai: OpenAI,
   cachedResearch: { url: string; data: string } | null,
   setCachedResearch: (cache: { url: string; data: string }) => void
 ): Promise<string> => {
@@ -16,60 +16,60 @@ const researchPracticeWithSearch = async (
   }
 
   try {
-    // Configure the grounding tool for Google Search
-    const groundingTool = {
-      googleSearch: {}
-    };
+    const researchQuery = `Research this dental practice comprehensively: ${practiceName} at ${practiceUrl}
 
-    const researchQuery = `${practiceName} dental practice ${practiceUrl} services team location contact information specialties technology awards community involvement`;
+Please analyze and provide detailed information about:
+1. Practice name and location (city, state, address)
+2. All dental services offered (be comprehensive, not just basic cleanings)
+3. Practice specializations and areas of expertise (focus on services, not individual doctors)
+4. Practice philosophy and brand voice
+5. Technology and equipment used
+6. Any awards, certifications, or recognition
+7. Community involvement or local partnerships
+8. Contact information (phone, email)
+9. Unique selling points that differentiate this practice
+10. Target patient demographics
+11. Any special programs or offers
 
-    console.log('Fetching fresh research data from Gemini Search...');
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: `Research this dental practice comprehensively and provide detailed information: ${researchQuery}.
+Format the response as detailed, well-organized information that can be used to create authentic social media content.`;
 
-      Please analyze and provide information about:
-      1. Practice name and location (city, state, address)
-      2. All dental services offered (be comprehensive, not just basic cleanings)
-      3. Practice specializations and areas of expertise (focus on services, not individual doctors)
-      4. Practice philosophy and brand voice
-      5. Technology and equipment used
-      6. Any awards, certifications, or recognition
-      7. Community involvement or local partnerships
-      8. Contact information (phone, email)
-      9. Unique selling points that differentiate this practice
-      10. Target patient demographics
-      11. Any special programs or offers
-
-      Format the response as detailed, well-organized information that can be used to create authentic social media content.`,
-      config: {
-        tools: [groundingTool],
-        temperature: 0.3,
-      },
+    console.log('Fetching fresh research data from OpenAI with web search...');
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-search-preview',
+      messages: [
+        {
+          role: 'user',
+          content: researchQuery
+        }
+      ],
+      temperature: 0.3,
     });
 
-    const researchData = response.text || 'No research results available';
+    const researchData = response.choices[0]?.message?.content || 'No research results available';
 
     // Cache the research result
     setCachedResearch({ url: practiceUrl, data: researchData });
 
     return researchData;
   } catch (error) {
-    console.warn('Failed to research practice with Gemini Search:', error);
+    console.warn('Failed to research practice with OpenAI:', error);
     return `Research unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`;
   }
 };
 
 // Read at build-time via Vite:
-const API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY as string;
+const OPENAI_API_KEY = (import.meta as any).env?.VITE_OPENAI_API_KEY as string;
 
-if (!API_KEY) {
+if (!OPENAI_API_KEY) {
   throw new Error(
-    "Missing VITE_GEMINI_API_KEY. Add it to your local .env/.env.local and set it as a Build-time env var in DigitalOcean."
+    "Missing VITE_OPENAI_API_KEY. Add it to your local .env/.env.local and set it as a Build-time env var in DigitalOcean."
   );
 }
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+const openai = new OpenAI({
+  apiKey: OPENAI_API_KEY,
+  dangerouslyAllowBrowser: true // Required for client-side usage
+});
 
 
 // Helper function to generate content for a subset of weeks
@@ -246,20 +246,27 @@ ${pastPostsContent}
 
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
-      contents: userPrompt,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.7,
-      },
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: systemInstruction
+        },
+        {
+          role: 'user',
+          content: userPrompt
+        }
+      ],
+      temperature: 0.7,
+      response_format: { type: 'json_object' }
     });
 
-    const jsonText = response.text;
+    const jsonText = response.choices[0]?.message?.content;
     if (!jsonText) {
       throw new Error("Received an empty response from the AI.");
     }
-    
+
     // Clean the response by removing markdown code blocks if present
     const cleanedJson = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
     const parsedData = JSON.parse(cleanedJson);
@@ -304,11 +311,11 @@ export const generateContentPlan = async (
   cachedResearch?: { url: string; data: string } | null,
   setCachedResearch?: (cache: { url: string; data: string }) => void
 ): Promise<WeekPlan[]> => {
-  // Research the practice using Gemini Search API (with caching)
+  // Research the practice using OpenAI with web search (with caching)
   const practiceResearch = await researchPracticeWithSearch(
     practiceUrl,
     practiceName,
-    ai,
+    openai,
     cachedResearch || null,
     setCachedResearch || (() => {})
   );
@@ -348,11 +355,11 @@ export const generateSinglePost = async (
   cachedResearch?: { url: string; data: string } | null,
   setCachedResearch?: (cache: { url: string; data: string }) => void
 ): Promise<Post> => {
-  // Research the practice using Gemini Search API (with caching)
+  // Research the practice using OpenAI with web search (with caching)
   const practiceResearch = await researchPracticeWithSearch(
     practiceUrl,
     practiceName,
-    ai,
+    openai,
     cachedResearch || null,
     setCachedResearch || (() => {})
   );
@@ -447,24 +454,31 @@ export const generateSinglePost = async (
 
   
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-pro',
-      contents: userPrompt,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.8,
-      },
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o',
+      messages: [
+        {
+          role: 'system',
+          content: systemInstruction
+        },
+        {
+          role: 'user',
+          content: userPrompt
+        }
+      ],
+      temperature: 0.8,
+      response_format: { type: 'json_object' }
     });
 
-    const jsonText = response.text;
+    const jsonText = response.choices[0]?.message?.content;
     if (!jsonText) {
       throw new Error("Received an empty response from the AI when regenerating post.");
     }
-    
+
     // Clean the response by removing markdown code blocks if present
     const cleanedJson = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
     const parsedData = JSON.parse(cleanedJson);
-    
+
     if (parsedData && parsedData.title && parsedData.caption) {
       // Post-process the single post to ensure hashtags are lowercase.
       parsedData.caption = parsedData.caption.replace(/#(\w+)/g, (_match: string, tag: string) => `#${tag.toLowerCase()}`);
@@ -474,7 +488,7 @@ export const generateSinglePost = async (
     }
 
   } catch (error) {
-    console.error("Gemini API call failed during single post regeneration:", error);
+    console.error("OpenAI API call failed during single post regeneration:", error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     throw new Error(`Failed to regenerate post. Details: ${errorMessage}`);
   }
