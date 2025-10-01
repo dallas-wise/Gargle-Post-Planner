@@ -93,6 +93,7 @@ const App: React.FC = () => {
         practiceUrl,
         startDate,
         postSchedule,
+        aiProvider,
         tempPastPostsContent,
         tempOnboardingContent,
         specialInstructions,
@@ -100,8 +101,7 @@ const App: React.FC = () => {
         practiceLocation,
         milestones,
         cachedResearch,
-        setCachedResearch,
-        aiProvider
+        setCachedResearch
       );
       setContentPlan(plan);
     } catch (err) {
@@ -111,7 +111,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [practiceName, practiceUrl, practicePhone, practiceLocation, startDate, postSchedule, pastPostsFile, onboardingFile, specialInstructions, milestones]);
+  }, [practiceName, practiceUrl, practicePhone, practiceLocation, startDate, postSchedule, pastPostsFile, onboardingFile, specialInstructions, milestones, aiProvider, cachedResearch]);
 
   const handleContentPlanChange = useCallback((weekIndex: number, postIndex: number, field: 'title' | 'caption', value: string) => {
     setContentPlan(currentPlan => {
@@ -141,11 +141,11 @@ const App: React.FC = () => {
         { weekIndex, postIndex },
         postDate.toISOString().split('T')[0], // Pass date as YYYY-MM-DD
         instructions,
+        aiProvider,
         onboardingContent,
         pastPostsContent,
         cachedResearch,
-        setCachedResearch,
-        aiProvider
+        setCachedResearch
       );
 
       setContentPlan(currentPlan => {
@@ -167,7 +167,7 @@ const App: React.FC = () => {
         return next;
       });
     }
-  }, [practiceName, practiceUrl, startDate, postSchedule, contentPlan, onboardingContent, pastPostsContent, cachedResearch]);
+  }, [practiceName, practiceUrl, startDate, postSchedule, contentPlan, onboardingContent, pastPostsContent, cachedResearch, aiProvider]);
 
 
   return (

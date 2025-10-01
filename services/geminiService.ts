@@ -1,11 +1,32 @@
 import { GoogleGenAI } from '@google/genai';
+import OpenAI from 'openai';
 import type { WeekPlan, Post } from '../types';
 
-// Use Gemini Search API to research the dental practice
+type AIProvider = 'gemini' | 'openai';
+
+// Read API keys at build-time via Vite
+const GEMINI_API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY as string;
+const OPENAI_API_KEY = (import.meta as any).env?.VITE_OPENAI_API_KEY as string;
+
+if (!GEMINI_API_KEY) {
+  throw new Error(
+    "Missing VITE_GEMINI_API_KEY. Add it to your local .env/.env.local and set it as a Build-time env var in DigitalOcean."
+  );
+}
+
+if (!OPENAI_API_KEY) {
+  throw new Error(
+    "Missing VITE_OPENAI_API_KEY. Add it to your local .env/.env.local and set it as a Build-time env var in DigitalOcean."
+  );
+}
+
+const geminiAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
+const openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY, dangerouslyAllowBrowser: true });
+
+// Lightweight research focused on essentials: specials, contact info, and content ideas
 const researchPracticeWithSearch = async (
   practiceUrl: string,
   practiceName: string,
-  ai: GoogleGenAI,
   cachedResearch: { url: string; data: string } | null,
   setCachedResearch: (cache: { url: string; data: string }) => void
 ): Promise<string> => {
@@ -21,27 +42,17 @@ const researchPracticeWithSearch = async (
       googleSearch: {}
     };
 
-    const researchQuery = `${practiceName} dental practice ${practiceUrl} services team location contact information specialties technology awards community involvement`;
-
-    console.log('Fetching fresh research data from Gemini Search...');
-    const response = await ai.models.generateContent({
+    console.log('Fetching focused research data...');
+    const response = await geminiAI.models.generateContent({
       model: 'gemini-2.5-flash',
-      contents: `Research this dental practice comprehensively and provide detailed information: ${researchQuery}.
+      contents: `Research ${practiceName} at ${practiceUrl} and extract ONLY the following essential information:
 
-      Please analyze and provide information about:
-      1. Practice name and location (city, state, address)
-      2. All dental services offered (be comprehensive, not just basic cleanings)
-      3. Practice specializations and areas of expertise (focus on services, not individual doctors)
-      4. Practice philosophy and brand voice
-      5. Technology and equipment used
-      6. Any awards, certifications, or recognition
-      7. Community involvement or local partnerships
-      8. Contact information (phone, email)
-      9. Unique selling points that differentiate this practice
-      10. Target patient demographics
-      11. Any special programs or offers
+1. **Contact Info**: Phone number, full address/location
+2. **Current Specials/Promotions**: Any active deals, discounts, or special offers
+3. **Unique Differentiators**: 2-3 key things that make them stand out (e.g., specific technology, community involvement, unique philosophy)
+4. **Content Ideas**: 3-5 interesting topics we could post about based on their website
 
-      Format the response as detailed, well-organized information that can be used to create authentic social media content.`,
+Keep it concise and focused. Skip lengthy service lists or detailed bios.`,
       config: {
         tools: [groundingTool],
         temperature: 0.3,
@@ -55,22 +66,31 @@ const researchPracticeWithSearch = async (
 
     return researchData;
   } catch (error) {
-    console.warn('Failed to research practice with Gemini Search:', error);
+    console.warn('Failed to research practice:', error);
     return `Research unavailable: ${error instanceof Error ? error.message : 'Unknown error'}`;
   }
 };
 
-// Read at build-time via Vite:
-const API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY as string;
 
-if (!API_KEY) {
-  throw new Error(
-    "Missing VITE_GEMINI_API_KEY. Add it to your local .env/.env.local and set it as a Build-time env var in DigitalOcean."
-  );
-}
+// Helper function to calculate posting dates for the schedule
+const calculatePostingDates = (startDate: string, postSchedule: 'MW' | 'TTH', numWeeks: number) => {
+  const start = new Date(startDate);
+  const dates: { week: number; dates: string[] }[] = [];
 
-const ai = new GoogleGenAI({ apiKey: API_KEY });
+  const daysOfWeek = postSchedule === 'MW' ? [1, 3] : [2, 4]; // Monday=1, Tuesday=2, Wednesday=3, Thursday=4
 
+  for (let week = 0; week < numWeeks; week++) {
+    const weekDates: string[] = [];
+    for (const dayOfWeek of daysOfWeek) {
+      const date = new Date(start);
+      date.setDate(start.getDate() + (week * 7) + (dayOfWeek - start.getDay() + (dayOfWeek >= start.getDay() ? 0 : 7)));
+      weekDates.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+    }
+    dates.push({ week: week + 1, dates: weekDates });
+  }
+
+  return dates;
+};
 
 // Helper function to generate content for a subset of weeks
 const generateWeeksBatch = async (
@@ -81,6 +101,7 @@ const generateWeeksBatch = async (
   weekStart: number,
   weekEnd: number,
   practiceResearch: string,
+  aiProvider: AIProvider,
   pastPostsContent?: string,
   onboardingContent?: string,
   specialInstructions?: string,
@@ -92,150 +113,159 @@ const generateWeeksBatch = async (
   const numWeeks = weekEnd - weekStart + 1;
   const totalPosts = numWeeks * 2;
 
+  // Calculate exact posting dates
+  const postingDates = calculatePostingDates(startDate, postSchedule, 12);
+  const relevantDates = postingDates.slice(weekStart - 1, weekEnd);
+
+  // Format dates for the prompt
+  const dateSchedule = relevantDates.map(({ week, dates }) =>
+    `Week ${week}: ${dates[0]} and ${dates[1]}`
+  ).join('\n');
+
   // ============================================================================
-  // REFERENCE DATA - Available for use in your prompt below
+  // REFERENCE DATA
   // ============================================================================
 
   const referenceData = {
-    // Client's onboarding document (if provided)
     onboardingDocument: onboardingContent || null,
-
-    // Past posts to avoid duplicating (if provided)
     pastPosts: pastPostsContent || null,
-
-    // Verified contact information
     contactInfo: {
       phone: practicePhone || null,
       location: practiceLocation || null
     },
-
-    // Team birthdays and work anniversaries
     teamMilestones: milestones || null,
-
-    // Special instructions from user
     userInstructions: specialInstructions || null,
-
-    // Practice research from web search
     practiceInfo: practiceResearch
   };
 
   // ============================================================================
-  // CUSTOM PROMPT
+  // NEW IMPROVED PROMPT - Focus on unique engaging content
   // ============================================================================
 
-  const systemInstruction = `
-${referenceData.onboardingDocument ? `CLIENT ONBOARDING DOCUMENT:
+  const systemInstruction = `You are a creative social media strategist for dental practices. Your goal is to create ENGAGING, UNIQUE, and AUTHENTIC content that connects with real people - not just list services.
+
+${referenceData.onboardingDocument ? `=== CLIENT ONBOARDING INFO ===
 ${referenceData.onboardingDocument}
 
-` : ''}${referenceData.pastPosts ? `PAST POSTS (DO NOT DUPLICATE THESE):
+` : ''}${referenceData.pastPosts ? `=== PAST POSTS (DO NOT DUPLICATE) ===
 ${referenceData.pastPosts}
 
-` : ''}${referenceData.contactInfo.phone ? `PRACTICE PHONE: ${referenceData.contactInfo.phone}
-` : ''}${referenceData.contactInfo.location ? `PRACTICE LOCATION: ${referenceData.contactInfo.location}
-` : ''}${referenceData.teamMilestones ? `TEAM BIRTHDAYS & WORK ANNIVERSARIES:
-${referenceData.teamMilestones}
-
-` : ''}${referenceData.userInstructions ? `SPECIAL INSTRUCTIONS:
+` : ''}${referenceData.contactInfo.phone ? `Phone: ${referenceData.contactInfo.phone}
+` : ''}${referenceData.contactInfo.location ? `Location: ${referenceData.contactInfo.location}
+` : ''}${referenceData.userInstructions ? `=== SPECIAL INSTRUCTIONS ===
 ${referenceData.userInstructions}
 
-` : ''}PRACTICE RESEARCH:
+` : ''}=== PRACTICE RESEARCH ===
 ${referenceData.practiceInfo}
 
----
+${referenceData.teamMilestones ? `=== TEAM MILESTONES (USE EXACT DATES) ===
+${referenceData.teamMilestones}
 
-You are a senior social-media strategist for dental practices. Using ONLY the information above (onboarding doc, past posts to avoid, verified contact info, milestones, special instructions, and practice research), create a 12-week content calendar for this practice.
+CRITICAL MILESTONE RULES:
+- Post milestones ON THE EXACT DATE or the closest posting day if exact date isn't a posting day
+- Each milestone gets EXACTLY ONE post - never duplicate
+- If milestone falls between posting days, use the NEAREST posting day
+- Track which milestones you've used to avoid duplicates
 
-Goals:
+` : ''}=== POSTING SCHEDULE WITH EXACT DATES ===
+${dateSchedule}
 
-Drive appointment requests and recall visits.
+=== CONTENT STRATEGY ===
 
-Educate local patients and highlight differentiators (technology, specialties, philosophy).
+**PRIMARY GOAL**: Create diverse, engaging posts that people WANT to read - not just service advertisements.
 
-Stay compliant (no medical diagnosis, no guarantees, no PHI/identifiable patient details).
+**Content Mix** (vary throughout 12 weeks):
+1. **Patient Education** (30%): Helpful tips, myth-busting, dental health facts
+2. **Behind-the-Scenes** (25%): Team culture, day-in-the-life, practice personality
+3. **Community Connection** (20%): Local events, community involvement, relatable stories
+4. **Service Highlights** (15%): Procedures/technology (but make them interesting/story-driven)
+5. **Engagement Posts** (10%): Questions, polls, fun facts, interactive content
 
-Constraints & style:
+**WHAT MAKES GREAT CONTENT**:
+- Tell stories, don't just list facts
+- Show personality and humanity
+- Make people smile, think, or learn something new
+- Feel authentic and conversational
+- Connect emotionally before promoting services
 
-Brand voice: mirror the voice implied by the onboarding document and research (friendly, trustworthy, community-focused; avoid hype).
+**WHAT TO AVOID**:
+- Don't make every post about services
+- Don't sound like a corporate brochure
+- Don't overuse practice name (use naturally, maybe 30% of posts)
+- Don't force location into every caption
+- Don't be repetitive (track themes you've used)
 
-Variety mix across the plan (rough guideline each week or across adjacent weeks):
+**HOLIDAY POSTING RULES**:
+- Post holiday content ON THE HOLIDAY DATE or 1 day before
+- Use the EXACT dates from the posting schedule above
+- Example: If Christmas (Dec 25) falls between Dec 22 and Dec 29 posts, use the Dec 24 or Dec 26 post (whichever is closest)
+- Never post holiday content more than 1 day before the actual holiday
 
-Education/Prevention tips,
+**TONE & STYLE**:
+- Friendly, warm, approachable
+- Educational but not preachy
+- Professional but personable
+- Use 0-2 emojis maximum per post (sparingly!)
 
-Service spotlight (specific procedures, benefits, candid FAQs),
+**OUTPUT FORMAT**:
+- title: Max 60 characters, compelling and specific
+- caption: 120-180 words, one natural CTA, 4-6 relevant hashtags (local + topic)
+- Hashtags will be auto-lowercased
 
-Social proof/community (team culture, community involvement, non-identifying testimonials or reviews),
+Generate exactly ${totalPosts} posts across weeks ${weekStart}-${weekEnd}.
 
-Engagement prompts (polls/questions/fun facts),
-
-Promotions/special programs ONLY if present in research/onboarding.
-
-Integrate team milestones (birthdays/anniversaries) during the appropriate week; if the exact date isn't a posting day, schedule the milestone post on the nearest scheduled day that week.
-
-Localize where appropriate (reference city/area from research), but never invent details that aren't supported by the inputs.
-
-Compliance: avoid clinical claims or before/after promises; use general benefits and encouragement to book a consult. Do not mention prices unless provided. No PHI.
-
-Each post must be unique, non-repetitive, and must NOT duplicate anything in "PAST POSTS" (and should minimize overlap in themes and wording across the 12 weeks).
-
-Output requirements per post:
-
-title: ≤ 60 characters; concise, specific, scroll-stopping.
-
-caption: 80–180 words, clear and helpful, with ONE natural call-to-action (e.g., "Call us" or "Book online") using the verified phone/location if provided. Include 3–7 relevant hashtags mixing service + local terms (they'll be lowercased later). Emojis optional and tasteful (0–3).
-
-Do not include links unless the practice website was provided; prefer "Call us" or "Book a visit" CTAs.
-
-No image prompts/notes outside the caption (schema only allows title/caption).
-
-Scheduling rules:
-
-Generate exactly ${totalPosts} posts across ${numWeeks} weeks for weeks ${weekStart}-${weekEnd}, assuming two posts on the specified posting days.
-
-If a major seasonal/holiday date falls in range and is clearly relevant to the location, you may theme one post that week (still follow the variety mix).
-
-Return ONLY the JSON in the required format and nothing else (no prose, no markdown, no comments).
-
----
-
-REQUIRED JSON OUTPUT FORMAT:
+Return ONLY valid JSON:
 {
   "weeks": [
     {
       "week": 1,
       "posts": [
-        {"title": "Post Title", "caption": "Caption text with #hashtags"},
-        {"title": "Post Title", "caption": "Caption text with #hashtags"}
+        {"title": "Post Title", "caption": "Caption with #hashtags"},
+        {"title": "Post Title", "caption": "Caption with #hashtags"}
       ]
     }
   ]
 }`;
 
-  // ============================================================================
-  // USER PROMPT - Keep this simple
-  // ============================================================================
+  const userPrompt = `Generate a ${numWeeks}-week content calendar for ${practiceName}.
 
-  const userPrompt = `
-Practice Name: ${practiceName}
-Website: ${practiceUrl}
 Start Date: ${startDate}
 Posting Days: ${scheduleText}
-Weeks to Generate: ${weekStart} through ${weekEnd} (${totalPosts} total posts)
+Weeks: ${weekStart} through ${weekEnd}
 
-Generate the content calendar now.
-`;
+Focus on unique, engaging content that connects with real people. Make it diverse and interesting!`;
 
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
-      contents: userPrompt,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.7,
-      },
-    });
+    let jsonText: string;
 
-    const jsonText = response.text;
+    if (aiProvider === 'openai') {
+      // Use OpenAI GPT-5
+      const response = await openaiClient.chat.completions.create({
+        model: 'gpt-5',
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.7,
+        response_format: { type: 'json_object' }
+      });
+
+      jsonText = response.choices[0]?.message?.content || '';
+    } else {
+      // Use Gemini
+      const response = await geminiAI.models.generateContent({
+        model: 'gemini-2.0-flash-exp',
+        contents: userPrompt,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.7,
+        },
+      });
+
+      jsonText = response.text || '';
+    }
+
     if (!jsonText) {
       throw new Error("Received an empty response from the AI.");
     }
@@ -248,7 +278,7 @@ Generate the content calendar now.
       // Post-process to ensure all hashtags are lowercase and week numbers are correct
       const processedWeeks = parsedData.weeks.map((week: WeekPlan, index: number) => ({
         ...week,
-        week: weekStart + index, // Ensure correct week numbering
+        week: weekStart + index,
         posts: week.posts.map(post => ({
           ...post,
           caption: post.caption.replace(/#(\w+)/g, (_match: string, tag: string) => `#${tag.toLowerCase()}`)
@@ -260,13 +290,9 @@ Generate the content calendar now.
     }
 
   } catch (error) {
-    console.error("Gemini API call failed:", error);
+    console.error(`${aiProvider.toUpperCase()} API call failed:`, error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
-    // Check for specific Gemini API related error messages if available
-    if (errorMessage.includes("API key not valid")) {
-        throw new Error("The provided API Key is not valid. Please check your environment variable.");
-    }
-    throw new Error(`Failed to generate content plan. Please check the website URL and try again. Details: ${errorMessage}`);
+    throw new Error(`Failed to generate content plan. Details: ${errorMessage}`);
   }
 };
 
@@ -275,6 +301,7 @@ export const generateContentPlan = async (
   practiceUrl: string,
   startDate: string,
   postSchedule: 'MW' | 'TTH',
+  aiProvider: AIProvider,
   pastPostsContent?: string,
   onboardingContent?: string,
   specialInstructions?: string,
@@ -284,18 +311,17 @@ export const generateContentPlan = async (
   cachedResearch?: { url: string; data: string } | null,
   setCachedResearch?: (cache: { url: string; data: string }) => void
 ): Promise<WeekPlan[]> => {
-  // Research the practice using Gemini Search API (with caching)
+  // Research the practice (with caching)
   const practiceResearch = await researchPracticeWithSearch(
     practiceUrl,
     practiceName,
-    ai,
     cachedResearch || null,
     setCachedResearch || (() => {})
   );
 
-  console.log('Generating complete 12-week content plan...');
+  console.log(`Generating complete 12-week content plan with ${aiProvider.toUpperCase()}...`);
 
-  // Generate all 12 weeks in a single call to ensure consistency, variety, and proper milestone handling
+  // Generate all 12 weeks in a single call to ensure consistency
   const allWeeks = await generateWeeksBatch(
     practiceName,
     practiceUrl,
@@ -304,6 +330,7 @@ export const generateContentPlan = async (
     1,
     12,
     practiceResearch,
+    aiProvider,
     pastPostsContent,
     onboardingContent,
     specialInstructions,
@@ -323,16 +350,16 @@ export const generateSinglePost = async (
   postToReplace: { weekIndex: number; postIndex: number },
   postDate: string,
   instructions: string,
+  aiProvider: AIProvider,
   onboardingContent?: string,
   pastPostsContent?: string,
   cachedResearch?: { url: string; data: string } | null,
   setCachedResearch?: (cache: { url: string; data: string }) => void
 ): Promise<Post> => {
-  // Research the practice using Gemini Search API (with caching)
+  // Research the practice (with caching)
   const practiceResearch = await researchPracticeWithSearch(
     practiceUrl,
     practiceName,
-    ai,
     cachedResearch || null,
     setCachedResearch || (() => {})
   );
@@ -351,109 +378,108 @@ export const generateSinglePost = async (
     .join('\n');
 
   // ============================================================================
-  // REFERENCE DATA - Available for use in your prompt below
+  // NEW IMPROVED SINGLE POST PROMPT
   // ============================================================================
 
-  const referenceData = {
-    // Client's onboarding document (if provided)
-    onboardingDocument: onboardingContent || null,
+  const systemInstruction = `You are a creative social media strategist for dental practices. Create ONE unique, engaging post that connects with real people.
 
-    // Past posts to avoid duplicating (if provided)
-    pastPosts: pastPostsContent || null,
+${onboardingContent ? `=== CLIENT ONBOARDING INFO ===
+${onboardingContent}
 
-    // Existing posts in current plan (to avoid duplication)
-    existingPosts: existingPostsText,
+` : ''}${pastPostsContent ? `=== PAST POSTS (DO NOT DUPLICATE) ===
+${pastPostsContent}
 
-    // User's regeneration instructions
-    userInstructions: instructions || null,
+` : ''}=== EXISTING POSTS IN PLAN (DO NOT DUPLICATE) ===
+${existingPostsText}
 
-    // Practice research from web search
-    practiceInfo: practiceResearch,
+${instructions ? `=== USER INSTRUCTIONS ===
+${instructions}
 
-    // Date for this post
-    postDate: postDate
-  };
+` : ''}=== PRACTICE RESEARCH ===
+${practiceResearch}
 
-  // ============================================================================
-  // CUSTOM PROMPT FOR SINGLE POST REGENERATION
-  // ============================================================================
+=== POST DATE ===
+${postDate}
 
-  const systemInstruction = `
-${referenceData.onboardingDocument ? `CLIENT ONBOARDING DOCUMENT:
-${referenceData.onboardingDocument}
+=== CONTENT GUIDELINES ===
 
-` : ''}${referenceData.pastPosts ? `PAST POSTS (DO NOT DUPLICATE):
-${referenceData.pastPosts}
+**Goal**: Create engaging content that connects emotionally - not just promotional service ads.
 
-` : ''}EXISTING POSTS IN CURRENT PLAN (DO NOT DUPLICATE):
-${referenceData.existingPosts}
+**Content Variety** (choose one approach):
+- Patient Education: Helpful tip, myth-buster, dental health fact
+- Behind-the-Scenes: Team culture, day-in-the-life, practice personality
+- Community Connection: Local event, community involvement, relatable story
+- Service Highlight: Make it story-driven and interesting (not just a list of features)
+- Engagement: Question, poll, fun fact, interactive
 
-${referenceData.userInstructions ? `USER INSTRUCTIONS FOR THIS POST:
-${referenceData.userInstructions}
+**Make It Great**:
+- Tell a story, don't list facts
+- Show personality and humanity
+- Make people smile or learn something
+- Feel authentic and conversational
+- Connect emotionally first
 
-` : ''}PRACTICE RESEARCH:
-${referenceData.practiceInfo}
+**Avoid**:
+- Don't make it all about services
+- Don't sound corporate or salesy
+- Don't overuse practice name (only if natural)
+- Don't force location into caption
+- Don't duplicate themes from existing posts
 
-POST DATE: ${referenceData.postDate}
+**Date Accuracy**:
+- If post date matches a holiday, you MAY include it (but don't force it)
+- Use the EXACT date provided - don't post holidays more than 1 day early
+- If milestone date is mentioned in user instructions, post ON that date
 
----
+**Style**:
+- Friendly, warm, approachable
+- Educational but not preachy
+- Professional but personable
+- 0-2 emojis maximum (sparingly!)
 
-You are a senior social-media strategist for dental practices. Using ONLY the information above (onboarding doc, past posts to avoid, existing posts in the current plan, user instructions, practice research, and the provided post date), write ONE replacement post for the specified date.
+**Format**:
+- title: Max 60 characters, compelling and specific
+- caption: 120-180 words, one natural CTA, 4-6 relevant hashtags
+- Hashtags will be auto-lowercased
 
-Goals:
+Return ONLY valid JSON:
+{"title": "Post Title", "caption": "Caption with #hashtags"}`;
 
-Fit naturally within the existing 12-week plan while avoiding duplication with "PAST POSTS" and "EXISTING POSTS."
+  const userPrompt = `Generate ONE unique post for ${practiceName} on ${postDate}.
 
-Drive appointment interest and educate locals about this practice's differentiators.
-
-Tailoring & style:
-
-Match brand voice from the onboarding/research.
-
-If the POST DATE aligns with a reasonable seasonal/holiday or with a listed milestone, tastefully incorporate it; otherwise ignore.
-
-Compliance: no diagnosis, no guarantees, no PHI; no prices unless provided.
-
-Output requirements:
-
-title: ≤ 60 characters; specific and compelling.
-
-caption: 80–180 words with ONE natural CTA (call or book). Use verified phone/location if provided. Include 3–7 relevant hashtags (service + local; they'll be lowercased later). Emojis optional (0–3).
-
-Must be unique and not overlap wording/themes already present in "EXISTING POSTS."
-
-Return ONLY the JSON object in the required format and nothing else (no prose, no markdown, no comments).
-
----
-
-REQUIRED JSON OUTPUT FORMAT:
-{"title": "Post Title", "caption": "Caption text with #hashtags"}
-`;
-
-  // ============================================================================
-  // USER PROMPT - Keep this simple
-  // ============================================================================
-
-  const userPrompt = `
-Practice Name: ${practiceName}
-Website: ${practiceUrl}
-Post Date: ${postDate}
-
-Generate one unique post now.
-`;
+Make it engaging and different from existing posts!`;
 
 
   try {
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.0-flash-exp',
-      contents: userPrompt,
-      config: {
-        systemInstruction: systemInstruction,
-        temperature: 0.8,
-      },
-    });
+    let jsonText: string;
 
-    const jsonText = response.text;
+    if (aiProvider === 'openai') {
+      // Use OpenAI GPT-5
+      const response = await openaiClient.chat.completions.create({
+        model: 'gpt-5',
+        messages: [
+          { role: 'system', content: systemInstruction },
+          { role: 'user', content: userPrompt }
+        ],
+        temperature: 0.8,
+        response_format: { type: 'json_object' }
+      });
+
+      jsonText = response.choices[0]?.message?.content || '';
+    } else {
+      // Use Gemini
+      const response = await geminiAI.models.generateContent({
+        model: 'gemini-2.0-flash-exp',
+        contents: userPrompt,
+        config: {
+          systemInstruction: systemInstruction,
+          temperature: 0.8,
+        },
+      });
+
+      jsonText = response.text || '';
+    }
+
     if (!jsonText) {
       throw new Error("Received an empty response from the AI when regenerating post.");
     }
@@ -463,7 +489,7 @@ Generate one unique post now.
     const parsedData = JSON.parse(cleanedJson);
 
     if (parsedData && parsedData.title && parsedData.caption) {
-      // Post-process the single post to ensure hashtags are lowercase.
+      // Post-process to ensure hashtags are lowercase
       parsedData.caption = parsedData.caption.replace(/#(\w+)/g, (_match: string, tag: string) => `#${tag.toLowerCase()}`);
       return parsedData as Post;
     } else {
@@ -471,7 +497,7 @@ Generate one unique post now.
     }
 
   } catch (error) {
-    console.error("Gemini API call failed during single post regeneration:", error);
+    console.error(`${aiProvider.toUpperCase()} API call failed during single post regeneration:`, error);
     const errorMessage = error instanceof Error ? error.message : "An unknown error occurred.";
     throw new Error(`Failed to regenerate post. Details: ${errorMessage}`);
   }
