@@ -292,6 +292,7 @@ Return ONLY valid JSON:
         config: {
           systemInstruction: systemInstruction,
           temperature: 0.7,
+          responseMimeType: 'application/json',
         },
       });
 
@@ -524,6 +525,7 @@ ${additionalGuidance}` : ''}`;
         config: {
           systemInstruction: systemInstruction,
           temperature: 0.8,
+          responseMimeType: 'application/json',
         },
       });
 
