@@ -75,16 +75,26 @@ Keep it concise and focused. Skip lengthy service lists or detailed bios.`,
 // Helper function to calculate posting dates for the schedule
 const calculatePostingDates = (startDate: string, postSchedule: 'MW' | 'TTH', numWeeks: number) => {
   const start = new Date(startDate);
-  const dates: { week: number; dates: string[] }[] = [];
+  const dates: { week: number; dates: { display: string; iso: string }[] }[] = [];
 
   const daysOfWeek = postSchedule === 'MW' ? [1, 3] : [2, 4]; // Monday=1, Tuesday=2, Wednesday=3, Thursday=4
 
+  const formatIso = (date: Date) => {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, '0');
+    const day = String(date.getDate()).padStart(2, '0');
+    return `${year}-${month}-${day}`;
+  };
+
   for (let week = 0; week < numWeeks; week++) {
-    const weekDates: string[] = [];
+    const weekDates: { display: string; iso: string }[] = [];
     for (const dayOfWeek of daysOfWeek) {
       const date = new Date(start);
       date.setDate(start.getDate() + (week * 7) + (dayOfWeek - start.getDay() + (dayOfWeek >= start.getDay() ? 0 : 7)));
-      weekDates.push(date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }));
+      weekDates.push({
+        display: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        iso: formatIso(date)
+      });
     }
     dates.push({ week: week + 1, dates: weekDates });
   }
@@ -116,11 +126,19 @@ const generateWeeksBatch = async (
   // Calculate exact posting dates
   const postingDates = calculatePostingDates(startDate, postSchedule, 12);
   const relevantDates = postingDates.slice(weekStart - 1, weekEnd);
+  const postsPerWeek = relevantDates[0]?.dates.length ?? 2;
 
   // Format dates for the prompt
   const dateSchedule = relevantDates.map(({ week, dates }) =>
-    `Week ${week}: ${dates[0]} and ${dates[1]}`
+    `Week ${week}: ${dates.map(date => `${date.display} (${date.iso})`).join(' and ')}`
   ).join('\n');
+
+  const chronologicalDates = relevantDates.flatMap(({ week, dates }) =>
+    dates.map((date, index) => {
+      const sequenceNumber = ((week - weekStart) * postsPerWeek) + index + 1;
+      return `${sequenceNumber}. Week ${week} - ${date.display} (${date.iso})`;
+    })
+  );
 
   // ============================================================================
   // REFERENCE DATA
@@ -199,6 +217,10 @@ Ensure that each post fulfills length, holiday, and instruction requirements by 
   dataSections.push(`Weeks covered in this batch: ${weekStart}-${weekEnd}`);
   dataSections.push(`Total posts required: ${totalPosts}`);
   dataSections.push(`Exact posting dates by week:\n${dateSchedule}`);
+  if (chronologicalDates.length) {
+    dataSections.push(`Chronological posting dates (use these exact dates in order):\n${chronologicalDates.join('\n')}`);
+  }
+  dataSections.push('Scheduling instructions: Use the exact posting dates above when planning post themes and align holiday content with the closest applicable date.');
 
   if (referenceData.userInstructions) {
     dataSections.push(`Special instructions: ${referenceData.userInstructions}`);
