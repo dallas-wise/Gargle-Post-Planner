@@ -189,6 +189,7 @@ ${dateSchedule}
 - Make people smile, think, or learn something new
 - Feel authentic and conversational
 - Connect emotionally before promoting services
+- Vary your calls to action—mix gentle statements, invitations, and occasional questions
 
 **WHAT TO AVOID**:
 - Don't make every post about services
@@ -196,6 +197,7 @@ ${dateSchedule}
 - Don't overuse practice name (use naturally, maybe 30% of posts)
 - Don't force location into every caption
 - Don't be repetitive (track themes you've used)
+- Don't end every caption with a question; use questions sparingly
 
 **HOLIDAY POSTING RULES**:
 - Post holiday content ON THE HOLIDAY DATE or 1 day before
@@ -209,9 +211,9 @@ ${dateSchedule}
 - Professional but personable
 - Use 0-2 emojis maximum per post (sparingly!)
 
-**OUTPUT FORMAT**:
+-**OUTPUT FORMAT**:
 - title: Max 60 characters, compelling and specific
-- caption: 120-180 words, one natural CTA, 4-6 relevant hashtags (local + topic)
+- caption: 120-180 words, one natural CTA (varied across posts; questions optional), 4-6 relevant hashtags (local + topic)
 - Hashtags will be auto-lowercased
 
 Generate exactly ${totalPosts} posts across weeks ${weekStart}-${weekEnd}.
@@ -433,6 +435,7 @@ ${postDate}
 - Make people smile or learn something
 - Feel authentic and conversational
 - Connect emotionally first
+- Vary your call-to-action style—questions are optional and should be mixed with statements or invitations
 
 **Avoid**:
 - Don't make it all about services
@@ -440,6 +443,7 @@ ${postDate}
 - Don't overuse practice name (only if natural)
 - Don't force location into caption
 - Don't duplicate themes from existing posts
+- Don't end every caption with a question; use questions sparingly
 
 **Date Accuracy**:
 - If post date matches a holiday, you MAY include it (but don't force it)
@@ -452,9 +456,9 @@ ${postDate}
 - Professional but personable
 - 0-2 emojis maximum (sparingly!)
 
-**Format**:
+-**Format**:
 - title: Max 60 characters, compelling and specific
-- caption: 120-180 words, one natural CTA, 4-6 relevant hashtags
+- caption: 120-180 words, one natural CTA (varied over time; questions optional), 4-6 relevant hashtags
 - Hashtags will be auto-lowercased
 
 Return ONLY valid JSON:
