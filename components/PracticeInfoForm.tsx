@@ -110,6 +110,9 @@ export const PracticeInfoForm: React.FC<PracticeInfoFormProps> = ({
             <label htmlFor="practicePhone" className="block text-sm font-medium text-gray-700 mb-1">
               Practice Phone Number (Optional)
             </label>
+            <p className="text-sm text-gray-500 mb-2">
+              Include the main phone number patients should call (local format is fine).
+            </p>
             <input
               type="tel"
               id="practicePhone"
