@@ -23,6 +23,26 @@ if (!OPENAI_API_KEY) {
 const geminiAI = new GoogleGenAI({ apiKey: GEMINI_API_KEY });
 const openaiClient = new OpenAI({ apiKey: OPENAI_API_KEY, dangerouslyAllowBrowser: true });
 
+const sanitizeJsonStringLiterals = (input: string) =>
+  input.replace(/"([^"\\]*(?:\\.[^"\\]*)*)"/g, (match) => {
+    const inner = match.slice(1, -1);
+    const sanitizedInner = inner.replace(/\r/g, '\\r').replace(/\n/g, '\\n');
+    return `"${sanitizedInner}"`;
+  });
+
+const parseJsonSafely = <T>(rawJson: string): T => {
+  try {
+    return JSON.parse(rawJson) as T;
+  } catch (initialError) {
+    try {
+      const sanitized = sanitizeJsonStringLiterals(rawJson);
+      return JSON.parse(sanitized) as T;
+    } catch (sanitizedError) {
+      throw initialError instanceof Error ? initialError : sanitizedError;
+    }
+  }
+};
+
 // Lightweight research focused on essentials: specials, contact info, and content ideas
 const researchPracticeWithSearch = async (
   practiceUrl: string,
@@ -320,7 +340,7 @@ Return ONLY valid JSON:
 
     // Clean the response by removing markdown code blocks if present
     const cleanedJson = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
-    const parsedData = JSON.parse(cleanedJson);
+    const parsedData = parseJsonSafely<{ weeks: WeekPlan[] }>(cleanedJson);
 
     if (parsedData && parsedData.weeks) {
       // Post-process to ensure all hashtags are lowercase and week numbers are correct
@@ -553,7 +573,7 @@ ${additionalGuidance}` : ''}`;
 
     // Clean the response by removing markdown code blocks if present
     const cleanedJson = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
-    const parsedData = JSON.parse(cleanedJson);
+    const parsedData = parseJsonSafely<Post>(cleanedJson);
 
     if (parsedData && parsedData.title && parsedData.caption) {
       // Post-process to ensure hashtags are lowercase
