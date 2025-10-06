@@ -43,6 +43,42 @@ const parseJsonSafely = <T>(rawJson: string): T => {
   }
 };
 
+const tryExtractSinglePost = (data: unknown): Post | null => {
+  if (!data || typeof data !== 'object') {
+    return null;
+  }
+
+  const candidate = data as Record<string, any>;
+
+  if (candidate.title && candidate.caption) {
+    return { title: candidate.title, caption: candidate.caption };
+  }
+
+  if (candidate.post && candidate.post.title && candidate.post.caption) {
+    return { title: candidate.post.title, caption: candidate.post.caption };
+  }
+
+  if (Array.isArray(candidate.posts) && candidate.posts.length > 0) {
+    const first = candidate.posts[0];
+    if (first?.title && first?.caption) {
+      return { title: first.title, caption: first.caption };
+    }
+  }
+
+  if (Array.isArray(candidate.weeks)) {
+    for (const week of candidate.weeks) {
+      if (week?.posts && Array.isArray(week.posts) && week.posts.length > 0) {
+        const first = week.posts[0];
+        if (first?.title && first?.caption) {
+          return { title: first.title, caption: first.caption };
+        }
+      }
+    }
+  }
+
+  return null;
+};
+
 // Lightweight research focused on essentials: specials, contact info, and content ideas
 const researchPracticeWithSearch = async (
   practiceUrl: string,
@@ -573,14 +609,16 @@ ${additionalGuidance}` : ''}`;
 
     // Clean the response by removing markdown code blocks if present
     const cleanedJson = jsonText.replace(/```json\s*/, '').replace(/```\s*$/, '').trim();
-    const parsedData = parseJsonSafely<Post>(cleanedJson);
+    const parsedData = parseJsonSafely<unknown>(cleanedJson);
+    const post = tryExtractSinglePost(parsedData);
 
-    if (parsedData && parsedData.title && parsedData.caption) {
+    if (post && post.title && post.caption) {
       // Post-process to ensure hashtags are lowercase
-      parsedData.caption = parsedData.caption.replace(/#(\w+)/g, (_match: string, tag: string) => `#${tag.toLowerCase()}`);
-      return parsedData as Post;
+      post.caption = post.caption.replace(/#(\w+)/g, (_match: string, tag: string) => `#${tag.toLowerCase()}`);
+      return post as Post;
     } else {
-       throw new Error("Invalid data structure received from AI for single post.");
+       const receivedKeys = parsedData && typeof parsedData === 'object' ? Object.keys(parsedData as Record<string, unknown>) : [];
+       throw new Error(`Invalid data structure received from AI for single post. Keys: ${receivedKeys.join(', ')}`);
     }
 
   } catch (error) {
