@@ -44,7 +44,21 @@ const parseJsonSafely = <T>(rawJson: string): T => {
 };
 
 const tryExtractSinglePost = (data: unknown): Post | null => {
-  if (!data || typeof data !== 'object') {
+  if (!data) {
+    return null;
+  }
+
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const extracted = tryExtractSinglePost(item);
+      if (extracted) {
+        return extracted;
+      }
+    }
+    return null;
+  }
+
+  if (typeof data !== 'object') {
     return null;
   }
 
