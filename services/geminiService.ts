@@ -1,6 +1,7 @@
 import { GoogleGenAI } from '@google/genai';
 import OpenAI from 'openai';
 import type { WeekPlan, Post } from '../types';
+import { calculatePostDate } from '../utils/dateUtils';
 
 type AIProvider = 'gemini' | 'openai';
 
@@ -178,10 +179,8 @@ Keep it concise and focused. Skip lengthy service lists or detailed bios.`,
 
 // Helper function to calculate posting dates for the schedule
 const calculatePostingDates = (startDate: string, postSchedule: 'MW' | 'TTH', numWeeks: number) => {
-  const start = new Date(startDate);
   const dates: { week: number; dates: { display: string; iso: string }[] }[] = [];
-
-  const daysOfWeek = postSchedule === 'MW' ? [1, 3] : [2, 4]; // Monday=1, Tuesday=2, Wednesday=3, Thursday=4
+  const targetDays = postSchedule === 'MW' ? [1, 3] : [2, 4]; // Monday=1, Tuesday=2, Wednesday=3, Thursday=4
 
   const formatIso = (date: Date) => {
     const year = date.getFullYear();
@@ -192,9 +191,8 @@ const calculatePostingDates = (startDate: string, postSchedule: 'MW' | 'TTH', nu
 
   for (let week = 0; week < numWeeks; week++) {
     const weekDates: { display: string; iso: string }[] = [];
-    for (const dayOfWeek of daysOfWeek) {
-      const date = new Date(start);
-      date.setDate(start.getDate() + (week * 7) + (dayOfWeek - start.getDay() + (dayOfWeek >= start.getDay() ? 0 : 7)));
+    for (let postIndex = 0; postIndex < targetDays.length; postIndex++) {
+      const date = calculatePostDate(startDate, week, postIndex, postSchedule);
       weekDates.push({
         display: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
         iso: formatIso(date)
