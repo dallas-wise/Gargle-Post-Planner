@@ -70,9 +70,6 @@ export const PostCard: React.FC<PostCardProps> = ({ post, postDate, weekIndex, p
           disabled={isRegenerating}
           className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
         >
-          <svg xmlns="http://www.w3.org/2000/svg" className="-ml-1 mr-2 h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M5 2a1 1 0 011 1v1h1a1 1 0 010 2H6v1a1 1 0 01-2 0V6H3a1 1 0 010-2h1V3a1 1 0 011-1zm0 10a1 1 0 011 1v1h1a1 1 0 110 2H6v1a1 1 0 11-2 0v-1H3a1 1 0 110-2h1v-1a1 1 0 011-1zM12 2a1 1 0 01.967.744L14.146 7.2l4.487 1.122a1 1 0 01.544 1.74l-3.238 3.153.764 4.41a1 1 0 01-1.451 1.054L12 15.58l-4.012 2.11a1 1 0 01-1.451-1.054l.764-4.41L4.063 10.062a1 1 0 01.544-1.74L9.094 7.2 11.033 2.744A1 1 0 0112 2z" clipRule="evenodd" />
-          </svg>
           Generate New Post
         </button>
       </div>
