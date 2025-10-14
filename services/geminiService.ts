@@ -2,6 +2,7 @@ import { GoogleGenAI } from '@google/genai';
 import OpenAI from 'openai';
 import type { WeekPlan, Post } from '../types';
 import { calculatePostDate } from '../utils/dateUtils';
+import { getHolidaysInRange, formatHolidayDate } from '../utils/holidayUtils';
 
 type AIProvider = 'gemini' | 'openai';
 
@@ -230,6 +231,75 @@ const generateWeeksBatch = async (
   const relevantDates = postingDates.slice(weekStart - 1, weekEnd);
   const postsPerWeek = relevantDates[0]?.dates.length ?? 2;
 
+  const allPostingSlots = postingDates.flatMap(({ week, dates }) =>
+    dates.map((date, index) => ({
+      week,
+      display: date.display,
+      iso: date.iso,
+      dateObj: new Date(`${date.iso}T00:00:00`),
+      sequence: ((week - 1) * postsPerWeek) + index + 1,
+      postIndex: index,
+    }))
+  );
+
+  const planStart = new Date(`${startDate}T00:00:00`);
+  const planEnd = allPostingSlots.length
+    ? allPostingSlots[allPostingSlots.length - 1].dateObj
+    : planStart;
+  const holidaysInRange = getHolidaysInRange(planStart, planEnd);
+
+  const holidayAlignment = holidaysInRange
+    .map(holiday => {
+      const candidatesBefore = allPostingSlots.filter(slot => slot.dateObj.getTime() <= holiday.date.getTime());
+      let chosen = candidatesBefore.length
+        ? candidatesBefore.reduce((best, current) => {
+            const bestDiff = holiday.date.getTime() - best.dateObj.getTime();
+            const currentDiff = holiday.date.getTime() - current.dateObj.getTime();
+            return currentDiff < bestDiff ? current : best;
+          })
+        : null;
+
+      let relation: 'exact' | 'before' | 'after';
+
+      if (chosen) {
+        relation = chosen.dateObj.getTime() === holiday.date.getTime() ? 'exact' : 'before';
+      } else {
+        const candidatesAfter = allPostingSlots.filter(slot => slot.dateObj.getTime() > holiday.date.getTime());
+        if (!candidatesAfter.length) {
+          return null;
+        }
+        chosen = candidatesAfter.reduce((best, current) => {
+          const bestDiff = Math.abs(holiday.date.getTime() - best.dateObj.getTime());
+          const currentDiff = Math.abs(holiday.date.getTime() - current.dateObj.getTime());
+          return currentDiff < bestDiff ? current : best;
+        });
+        relation = 'after';
+      }
+
+      const dayMs = 24 * 60 * 60 * 1000;
+      const diffDays = Math.round((holiday.date.getTime() - chosen.dateObj.getTime()) / dayMs);
+      const absDiffDays = Math.abs(diffDays);
+      const diffDescription =
+        relation === 'exact'
+          ? 'on the holiday'
+          : relation === 'before'
+            ? `${absDiffDays} day${absDiffDays === 1 ? '' : 's'} before`
+            : `${absDiffDays} day${absDiffDays === 1 ? '' : 's'} after (no earlier post date is available in this plan)`;
+
+      return {
+        holiday,
+        slot: chosen,
+        relation,
+        diffDescription,
+      };
+    })
+    .filter(Boolean) as {
+      holiday: { name: string; date: Date };
+      slot: typeof allPostingSlots[number];
+      relation: 'exact' | 'before' | 'after';
+      diffDescription: string;
+    }[];
+
   // Format dates for the prompt
   const dateSchedule = relevantDates.map(({ week, dates }) =>
     `Week ${week}: ${dates.map(date => `${date.display} (${date.iso})`).join(' and ')}`
@@ -281,6 +351,7 @@ Special instructions (optional)
 Birthdays/work anniversaries
 Special instructions
 Look ahead at the next twelve weeks, and write out the dates that each post will be on. Based on that, if there are any holidays that happen within the twelve weeks, the post that happens right before the holiday must be holiday themed. Ensure that you get as close to the actual date as possible with your post.
+If you are given "Holiday alignment requirements", use the exact post assignments specified there without moving the holiday theme to any other date.
 If there are PDFs provided, read through the content. The Client Onboarding PDF will inform you of additional dental office information, which can give you more information to work with. The Avoid Duplicate PDF is a collection of posts that have been made by that dental office up to this point. Do not duplicate any of this content in your twelve week plan. If there is no PDF, move on to the next step.
 Collect information from the dental office’s website, including services, offers, and people.
 Create an outline of the posts that you are going to make. List out each week and the topics that you will be covering.
@@ -319,6 +390,12 @@ Ensure that each post fulfills length, holiday, and instruction requirements by 
     dataSections.push(`Avoid Duplicate PDF content (do not reuse):\n${referenceData.pastPosts}`);
   }
   dataSections.push(`Website research summary:\n${referenceData.practiceInfo}`);
+  if (holidayAlignment.length) {
+    const holidayLines = holidayAlignment.map(({ holiday, slot, diffDescription }) =>
+      `${holiday.name} (${formatHolidayDate(holiday.date)}): Assign the holiday theme to Post ${slot.sequence} on ${slot.display} (${slot.iso}) — ${diffDescription}.`
+    );
+    dataSections.push(`Holiday alignment requirements (must follow exactly):\n${holidayLines.join('\n')}`);
+  }
 
   const systemInstruction = `${basePrompt}
 
