@@ -9,21 +9,21 @@ export const calculatePostDate = (
 
   // Target days of the week: Sunday=0, Monday=1, ..., Saturday=6
   const targetDays = postSchedule === 'MW' ? [1, 3] : [2, 4]; // [Monday, Wednesday] or [Tuesday, Thursday]
-  const dayForThisPost = targetDays[postIndex];
 
-  // Find the first Monday on or after the plan's start date to establish a baseline for week 1
-  const firstMonday = new Date(planStartDate);
-  const startDayOfWeek = firstMonday.getDay();
-  const daysUntilFirstMonday = (1 - startDayOfWeek + 7) % 7;
-  firstMonday.setDate(firstMonday.getDate() + daysUntilFirstMonday);
+  // Find the first scheduled post day on or after the plan start date
+  const firstTargetDay = targetDays[0];
+  const firstPostDate = new Date(planStartDate);
+  const startDayOfWeek = firstPostDate.getDay();
+  const daysUntilFirstTarget = (firstTargetDay - startDayOfWeek + 7) % 7;
+  firstPostDate.setDate(firstPostDate.getDate() + daysUntilFirstTarget);
 
-  // Start with the Monday of the correct week
-  const postDate = new Date(firstMonday);
-  postDate.setDate(firstMonday.getDate() + weekIndex * 7);
+  // Advance by whole weeks
+  const postDate = new Date(firstPostDate);
+  postDate.setDate(firstPostDate.getDate() + weekIndex * 7);
 
-  // Adjust from that Monday to the correct day for the post (e.g., Wednesday or Thursday)
-  const daysFromMonday = dayForThisPost - 1; // e.g., Wednesday (3) - Monday (1) = 2 days
-  postDate.setDate(postDate.getDate() + daysFromMonday);
+  // Adjust within the week to the specific scheduled day (e.g., Wednesday or Thursday)
+  const dayOffset = (targetDays[postIndex] - firstTargetDay + 7) % 7;
+  postDate.setDate(postDate.getDate() + dayOffset);
 
   return postDate;
 };
