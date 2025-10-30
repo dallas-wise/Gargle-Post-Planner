@@ -113,7 +113,7 @@ const App: React.FC = () => {
     }
   }, [practiceName, practiceUrl, practicePhone, practiceLocation, startDate, postSchedule, pastPostsFile, onboardingFile, specialInstructions, milestones, aiProvider, cachedResearch]);
 
-  const handleContentPlanChange = useCallback((weekIndex: number, postIndex: number, field: 'title' | 'caption', value: string) => {
+  const handleContentPlanChange = useCallback((weekIndex: number, postIndex: number, field: 'title' | 'caption' | 'photoIdeas', value: string) => {
     setContentPlan(currentPlan => {
       if (!currentPlan) return null;
       const newPlan = JSON.parse(JSON.stringify(currentPlan));

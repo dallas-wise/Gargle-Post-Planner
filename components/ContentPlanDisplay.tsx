@@ -9,7 +9,7 @@ interface ContentPlanDisplayProps {
   practiceName: string;
   postSchedule: 'MW' | 'TTH';
   startDate: string;
-  onContentChange: (weekIndex: number, postIndex: number, field: 'title' | 'caption', value: string) => void;
+  onContentChange: (weekIndex: number, postIndex: number, field: 'title' | 'caption' | 'photoIdeas', value: string) => void;
   onRegeneratePost: (weekIndex: number, postIndex: number, instructions: string) => void;
   regeneratingPosts: Set<string>;
 }
@@ -25,8 +25,8 @@ export const ContentPlanDisplay: React.FC<ContentPlanDisplayProps> = ({
 }) => {
 
   const handleDownload = () => {
-    const dataForExcel = contentPlan.flatMap(week => 
-      week.posts.map(post => [post.caption])
+    const dataForExcel = contentPlan.flatMap(week =>
+      week.posts.map(post => [`${post.title}\n\n${post.caption}`])
     );
     const ws = XLSX.utils.aoa_to_sheet(dataForExcel);
     ws['!cols'] = [{ wch: 100 }];

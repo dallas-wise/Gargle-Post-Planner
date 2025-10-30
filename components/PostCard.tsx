@@ -6,7 +6,7 @@ interface PostCardProps {
   postDate: string;
   weekIndex: number;
   postIndex: number;
-  onContentChange: (weekIndex: number, postIndex: number, field: 'title' | 'caption', value: string) => void;
+  onContentChange: (weekIndex: number, postIndex: number, field: 'title' | 'caption' | 'photoIdeas', value: string) => void;
   onRegenerate: (weekIndex: number, postIndex: number, instructions: string) => void;
   isRegenerating: boolean;
 }
@@ -49,6 +49,20 @@ export const PostCard: React.FC<PostCardProps> = ({ post, postDate, weekIndex, p
           rows={8}
           className="text-gray-600 whitespace-pre-wrap text-sm leading-relaxed bg-transparent w-full focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-md -ml-2 px-2 py-1 transition-shadow resize-none flex-grow"
         />
+
+        <div className="mt-3 pt-3 border-t border-gray-200">
+          <label htmlFor={`photoIdeas-${weekIndex}-${postIndex}`} className="block text-xs font-semibold text-gray-700 mb-1">
+            Photo/Content Ideas
+          </label>
+          <textarea
+            id={`photoIdeas-${weekIndex}-${postIndex}`}
+            value={post.photoIdeas || ''}
+            onChange={(e) => onContentChange(weekIndex, postIndex, 'photoIdeas', e.target.value)}
+            rows={2}
+            placeholder="Suggested photos or content for this post..."
+            className="text-gray-600 text-sm leading-relaxed bg-white w-full focus:outline-none focus:ring-2 focus:ring-blue-500 rounded-lg p-2 border border-gray-300 transition-shadow resize-none"
+          />
+        </div>
       </div>
 
       <div className="mt-4 pt-4 border-t border-gray-200">

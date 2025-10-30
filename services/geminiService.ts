@@ -67,17 +67,29 @@ const tryExtractSinglePost = (data: unknown): Post | null => {
   const candidate = data as Record<string, any>;
 
   if (candidate.title && candidate.caption) {
-    return { title: candidate.title, caption: candidate.caption };
+    return {
+      title: candidate.title,
+      caption: candidate.caption,
+      ...(candidate.photoIdeas && { photoIdeas: candidate.photoIdeas })
+    };
   }
 
   if (candidate.post && candidate.post.title && candidate.post.caption) {
-    return { title: candidate.post.title, caption: candidate.post.caption };
+    return {
+      title: candidate.post.title,
+      caption: candidate.post.caption,
+      ...(candidate.post.photoIdeas && { photoIdeas: candidate.post.photoIdeas })
+    };
   }
 
   if (Array.isArray(candidate.posts) && candidate.posts.length > 0) {
     const first = candidate.posts[0];
     if (first?.title && first?.caption) {
-      return { title: first.title, caption: first.caption };
+      return {
+        title: first.title,
+        caption: first.caption,
+        ...(first.photoIdeas && { photoIdeas: first.photoIdeas })
+      };
     }
   }
 
@@ -86,7 +98,11 @@ const tryExtractSinglePost = (data: unknown): Post | null => {
       if (week?.posts && Array.isArray(week.posts) && week.posts.length > 0) {
         const first = week.posts[0];
         if (first?.title && first?.caption) {
-          return { title: first.title, caption: first.caption };
+          return {
+            title: first.title,
+            caption: first.caption,
+            ...(first.photoIdeas && { photoIdeas: first.photoIdeas })
+          };
         }
       }
     }
@@ -113,20 +129,21 @@ Write like you're actually speaking to someone, with natural pauses and emphasis
 Mix up the heading formats
 You vary the language you select in every post, not always choosing the most statistically likely option every time, because you know you’re writing content for 50+ dental social media accounts per month, and each article needs to be different.
 # Guidelines for Content
-Generate a headline and a caption for each post.
+Generate a headline, caption, and photo ideas for each post.
 Each headline must be 3-6 words long and cover a dental or dental office topic.
 Each caption should be 1–2 paragraphs long.
+For photo ideas, suggest 1-2 specific types of photos or content the client should provide to accompany the post (e.g., "Photo of the team in Halloween costumes", "Before/after smile transformation", "Office exterior shot").
 Highlight what makes the dental office unique (family-friendly, modern technology, gentle care.)
-At the end, include a clear call to action (rotating between booking, calling, DMing, or visiting the website). Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post.
+At the end, ALWAYS include a clear call to action that combines calling AND visiting the website. Vary the wording naturally (e.g., "Call us at [phone] or visit [website] to schedule!", "Give us a call or book online at [website]", "Ready to schedule? Call [phone] or visit [website]"). Never suggest DMing to book. Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post.
 ## Holiday Requirements
-When there is a holiday, you are required to make a post for that holiday on the post date closest to the actual holiday, as long as it falls before. Always check both dates in a week to confirm which date is closer to the actual holiday.
+When there is a holiday, you must place the holiday post on the scheduled date that is closest to the actual holiday. If one of the scheduled dates is the holiday itself, use that exact date. Otherwise, use the closest scheduled date that occurs before the holiday. Always evaluate both scheduled dates each week to confirm which option is closest.
 # Examples
 Halloween Tips and Tricks (or Treats!)
-When it comes to candy, dental care is probably the last thing that comes to mind (unless you had those **neighbors that hand out toothbrushes–we love dental care but come on :face_with_rolling_eyes:) However, the only thing scarier than ghosts are cavities, so be sure to brush and floss after a candy run. And if you have braces, PLEASE stay away from the caramels and hard candies!
-If it’s been a bit since your last visit, don’t get spooked :ghost: set up an appointment with Dr. Green today!
+When it comes to candy, dental care is probably the last thing that comes to mind (unless you had those **neighbors that hand out toothbrushes–we love dental care but come on 🙄) However, the only thing scarier than ghosts are cavities, so be sure to brush and floss after a candy run. And if you have braces, PLEASE stay away from the caramels and hard candies!
+If it's been a bit since your last visit, don't get spooked 👻 set up an appointment with Dr. Green today!
 #spookyseason #spanishforkdentist #dentaltips
 Happy Birthday Dr. Green!!
-Everybody show some love for Dr. Green! He has been serving the Spanish Fork area since 2006, and his biggest birthday wish is for everyone to floss more often than just the night before a dental appointment :tooth: :partying_face: :toothbrush: :balloon: :confetti_ball: Happy birthday Dr. Green!
+Everybody show some love for Dr. Green! He has been serving the Spanish Fork area since 2006, and his biggest birthday wish is for everyone to floss more often than just the night before a dental appointment 🦷🥳🪥🎈🎊 Happy birthday Dr. Green!
 #happybirthdaydrgreen #spanishforkdentist #flossingiscool`;
 
 // Lightweight research focused on essentials: specials, contact info, and content ideas
@@ -191,14 +208,16 @@ const calculatePostingDates = (startDate: string, postSchedule: 'MW' | 'TTH', nu
   };
 
   for (let week = 0; week < numWeeks; week++) {
-    const weekDates: { display: string; iso: string }[] = [];
-    for (let postIndex = 0; postIndex < targetDays.length; postIndex++) {
+    const weekDates = targetDays.map((_, postIndex) => {
       const date = calculatePostDate(startDate, week, postIndex, postSchedule);
-      weekDates.push({
+      return {
         display: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-        iso: formatIso(date)
-      });
-    }
+        iso: formatIso(date),
+        timestamp: date.getTime()
+      };
+    }).sort((a, b) => a.timestamp - b.timestamp)
+      .map(({ display, iso }) => ({ display, iso }));
+
     dates.push({ week: week + 1, dates: weekDates });
   }
 
@@ -229,23 +248,27 @@ const generateWeeksBatch = async (
   // Calculate exact posting dates
   const postingDates = calculatePostingDates(startDate, postSchedule, 12);
   const relevantDates = postingDates.slice(weekStart - 1, weekEnd);
-  const postsPerWeek = relevantDates[0]?.dates.length ?? 2;
 
-  const allPostingSlots = postingDates.flatMap(({ week, dates }) =>
+  const rawPostingSlots = postingDates.flatMap(({ week, dates }) =>
     dates.map((date, index) => ({
       week,
       display: date.display,
       iso: date.iso,
-      dateObj: new Date(`${date.iso}T00:00:00`),
-      sequence: ((week - 1) * postsPerWeek) + index + 1,
       postIndex: index,
+      dateObj: new Date(`${date.iso}T00:00:00`)
     }))
   );
 
-  const planStart = new Date(`${startDate}T00:00:00`);
-  const planEnd = allPostingSlots.length
-    ? allPostingSlots[allPostingSlots.length - 1].dateObj
-    : planStart;
+  const allPostingSlots = rawPostingSlots
+    .slice()
+    .sort((a, b) => a.dateObj.getTime() - b.dateObj.getTime())
+    .map((slot, index) => ({
+      ...slot,
+      sequence: index + 1
+    }));
+
+  const planStart = allPostingSlots[0]?.dateObj ?? new Date(`${startDate}T00:00:00`);
+  const planEnd = allPostingSlots[allPostingSlots.length - 1]?.dateObj ?? planStart;
   const holidaysInRange = getHolidaysInRange(planStart, planEnd);
 
   const holidayAlignment = holidaysInRange
@@ -305,12 +328,11 @@ const generateWeeksBatch = async (
     `Week ${week}: ${dates.map(date => `${date.display} (${date.iso})`).join(' and ')}`
   ).join('\n');
 
-  const chronologicalDates = relevantDates.flatMap(({ week, dates }) =>
-    dates.map((date, index) => {
-      const sequenceNumber = ((week - weekStart) * postsPerWeek) + index + 1;
-      return `${sequenceNumber}. Week ${week} - ${date.display} (${date.iso})`;
-    })
-  );
+  const relevantSlots = allPostingSlots.filter(slot => slot.week >= weekStart && slot.week <= weekEnd);
+  const chronologicalDates = relevantSlots.map((slot, index) => {
+    const dayName = slot.dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+    return `${index + 1}. Week ${slot.week} - ${slot.display} (${slot.iso}) — ${dayName}`;
+  });
 
   // ============================================================================
   // REFERENCE DATA
@@ -350,12 +372,69 @@ Avoid Duplicate PDF
 Special instructions (optional)
 Birthdays/work anniversaries
 Special instructions
+
+## Content Balance and Variety
+IMPORTANT: Use practice-specific details (from special instructions, onboarding PDFs, and team milestones) strategically and sparingly:
+- Incorporate unique practice details into 3-5 posts across the 12-week plan, not every post
+- Use special instructions as context and inspiration, but don't force them into every caption
+- Avoid repeating the same phrases or unique details multiple times across different posts
+- Balance practice-specific content with general dental education, fun facts, and engaging topics
+- The goal is natural, varied content that occasionally highlights what makes the practice special
+
+## Content Categories - Mix These Throughout the 12 Weeks
+Create a diverse content mix using these categories. Aim for variety - no more than 2-3 posts of the same type:
+
+**Educational Tips** (3-4 posts): Share practical dental health advice beyond just "schedule your cleaning"
+- Proper brushing and flossing techniques
+- Foods that promote oral health or harm teeth
+- Signs of gum disease or other dental issues
+- Tips for sensitive teeth, bad breath prevention
+- Oral care for specific groups (kids, seniors, braces wearers)
+
+**Fun & Engaging** (2-3 posts): Light-hearted content that entertains
+- Dental jokes or puns
+- Fun dental facts or trivia
+- "Did you know?" posts about teeth and dental history
+- Playful questions to engage followers
+
+**Practice Highlights** (3-4 posts): Showcase what makes this practice special (use research data)
+- Technology and modern equipment
+- Team spotlights and culture
+- Community involvement
+- Patient testimonial taglines (brief quotes or themes, not full reviews)
+
+**Promotional/Engagement** (2-3 posts): Encourage action and growth
+- Refer-a-friend campaigns
+- Follow us on social media
+- Share your smile stories
+- Patient appreciation
+
+**Seasonal/Holiday** (as applicable): Holiday-themed posts aligned to the schedule
+
+**Service-Focused** (2-3 posts): Highlight specific treatments (use website research)
+- Cosmetic dentistry options
+- Preventative care benefits
+- Emergency dental care
+- Specialized services the practice offers
+
+Balance general dental knowledge (usable by any practice) with practice-specific details. Most posts should be broadly educational or engaging, with occasional practice-specific highlights.
+
+## Critical: Never Make Assumptions
+DO NOT mention or assume ANY of the following unless EXPLICITLY provided in the reference materials (onboarding PDF, special instructions, or website research):
+- Office closures or holiday hours (e.g., "We're closed for Christmas", "Closed for Veterans Day")
+- Special discounts, promotions, or deals (e.g., "Veterans discount", "Holiday special pricing")
+- Specific services not confirmed in the research data
+- Patient financing options or insurance policies
+- Emergency availability or after-hours services
+
+If you want to create holiday content, focus on general well-wishes, dental tips related to the holiday, or fun facts - NOT practice operations or promotions.
+
 Look ahead at the next twelve weeks, and write out the dates that each post will be on. Based on that, if there are any holidays that happen within the twelve weeks, the post that happens right before the holiday must be holiday themed. Ensure that you get as close to the actual date as possible with your post.
 If you are given "Holiday alignment requirements", use the exact post assignments specified there without moving the holiday theme to any other date.
 If there are PDFs provided, read through the content. The Client Onboarding PDF will inform you of additional dental office information, which can give you more information to work with. The Avoid Duplicate PDF is a collection of posts that have been made by that dental office up to this point. Do not duplicate any of this content in your twelve week plan. If there is no PDF, move on to the next step.
-Collect information from the dental office’s website, including services, offers, and people.
+Collect information from the dental office's website, including services, offers, and people.
 Create an outline of the posts that you are going to make. List out each week and the topics that you will be covering.
-Create each week’s content, following the examples, information, and formatting provided above.
+Create each week's content, following the examples, information, and formatting provided above.
 Ensure that each post fulfills length, holiday, and instruction requirements by checking each one.`;
 
   const dataSections: string[] = [];
@@ -391,9 +470,10 @@ Ensure that each post fulfills length, holiday, and instruction requirements by 
   }
   dataSections.push(`Website research summary:\n${referenceData.practiceInfo}`);
   if (holidayAlignment.length) {
-    const holidayLines = holidayAlignment.map(({ holiday, slot, diffDescription }) =>
-      `${holiday.name} (${formatHolidayDate(holiday.date)}): Assign the holiday theme to Post ${slot.sequence} on ${slot.display} (${slot.iso}) — ${diffDescription}.`
-    );
+    const holidayLines = holidayAlignment.map(({ holiday, slot, diffDescription }) => {
+      const dayName = slot.dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+      return `${holiday.name} (${formatHolidayDate(holiday.date)}): Use the post scheduled for ${dayName}, ${slot.display} (${slot.iso}) [Post ${slot.sequence}, Week ${slot.week}, Post ${slot.postIndex + 1}] — ${diffDescription}. Do not move this holiday to any other date.`;
+    });
     dataSections.push(`Holiday alignment requirements (must follow exactly):\n${holidayLines.join('\n')}`);
   }
 
@@ -419,8 +499,8 @@ Return ONLY valid JSON:
     {
       "week": 1,
       "posts": [
-        {"title": "Post Title", "caption": "Caption with #hashtags"},
-        {"title": "Post Title", "caption": "Caption with #hashtags"}
+        {"title": "Post Title", "caption": "Caption with #hashtags", "photoIdeas": "Specific photo suggestions for this post"},
+        {"title": "Post Title", "caption": "Caption with #hashtags", "photoIdeas": "Specific photo suggestions for this post"}
       ]
     }
   ]
@@ -582,7 +662,7 @@ export const generateSinglePost = async (
 
   const singlePostBasePrompt = `${CORE_PROMPT}
 # Instructions
-Use the information below to create exactly one social media post for the specified dental practice and scheduled date. Follow all tone, voice, and content guidelines above. Write a 1–2 paragraph caption (bullet points are allowed when helpful). Highlight what makes the practice unique, include one clear call to action (choose naturally among booking, calling, DMing, or visiting the website), and finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post. If the provided date is the closest posting day before a holiday, make the post relevant to that holiday. Avoid duplicating any existing posts listed in the provided data.`;
+Use the information below to create exactly one social media post for the specified dental practice and scheduled date. Follow all tone, voice, and content guidelines above. Write a 1–2 paragraph caption (bullet points are allowed when helpful). Highlight what makes the practice unique, and ALWAYS include a clear call to action that combines calling AND visiting the website (never suggest DMing). Vary the wording naturally (e.g., "Call us at [phone] or visit [website]", "Give us a call or book online"). Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post. If the provided date is the closest posting day before a holiday, make the post relevant to that holiday. Avoid duplicating any existing posts listed in the provided data.`;
 
   const singlePostDataSections: string[] = [];
   singlePostDataSections.push(`Practice name: ${practiceName}`);
@@ -617,7 +697,7 @@ Use the information below to create exactly one social media post for the specif
 ${singlePostDataSections.join('\n\n')}
 
 Return ONLY valid JSON:
-{"title": "Post Title", "caption": "Caption with #hashtags"}`;
+{"title": "Post Title", "caption": "Caption with #hashtags", "photoIdeas": "Specific photo suggestions for this post"}`;
 
   const additionalGuidance = [
     normalizedGlobalInstructions ? `Follow these ongoing special instructions: ${normalizedGlobalInstructions}` : null,
