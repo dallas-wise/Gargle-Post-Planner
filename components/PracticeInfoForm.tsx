@@ -23,8 +23,6 @@ interface PracticeInfoFormProps {
   setSpecialInstructions: (value: string) => void;
   milestones: string;
   setMilestones: (value: string) => void;
-  aiProvider: 'openai' | 'gemini';
-  setAiProvider: (value: 'openai' | 'gemini') => void;
   onSubmit: () => void;
   isLoading: boolean;
 }
@@ -50,8 +48,6 @@ export const PracticeInfoForm: React.FC<PracticeInfoFormProps> = ({
   setSpecialInstructions,
   milestones,
   setMilestones,
-  aiProvider,
-  setAiProvider,
   onSubmit,
   isLoading,
 }) => {
@@ -178,35 +174,6 @@ export const PracticeInfoForm: React.FC<PracticeInfoFormProps> = ({
                 }`}
               >
                 Tuesdays & Thursdays
-              </button>
-            </div>
-          </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">
-              AI Provider
-            </label>
-            <div className="flex rounded-lg bg-gray-100 p-1 space-x-1">
-              <button
-                type="button"
-                onClick={() => setAiProvider('openai')}
-                className={`w-full px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  aiProvider === 'openai'
-                    ? 'bg-white text-gray-900 shadow-sm'
-                    : 'bg-transparent text-gray-500 hover:bg-white/60'
-                }`}
-              >
-                OpenAI (ChatGPT)
-              </button>
-              <button
-                type="button"
-                onClick={() => setAiProvider('gemini')}
-                className={`w-full px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                  aiProvider === 'gemini'
-                  ? 'bg-white text-gray-900 shadow-sm'
-                  : 'bg-transparent text-gray-500 hover:bg-white/60'
-                }`}
-              >
-                Google Gemini
               </button>
             </div>
           </div>

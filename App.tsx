@@ -22,7 +22,6 @@ const App: React.FC = () => {
   const [pastPostsFile, setPastPostsFile] = useState<File | null>(null);
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
   const [milestones, setMilestones] = useState<string>('');
-  const [aiProvider, setAiProvider] = useState<'openai' | 'gemini'>('gemini');
   const [contentPlan, setContentPlan] = useState<WeekPlan[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -93,7 +92,7 @@ const App: React.FC = () => {
         practiceUrl,
         startDate,
         postSchedule,
-        aiProvider,
+        'gemini',
         tempPastPostsContent,
         tempOnboardingContent,
         specialInstructions,
@@ -111,7 +110,7 @@ const App: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [practiceName, practiceUrl, practicePhone, practiceLocation, startDate, postSchedule, pastPostsFile, onboardingFile, specialInstructions, milestones, aiProvider, cachedResearch]);
+  }, [practiceName, practiceUrl, practicePhone, practiceLocation, startDate, postSchedule, pastPostsFile, onboardingFile, specialInstructions, milestones, cachedResearch]);
 
   const handleContentPlanChange = useCallback((weekIndex: number, postIndex: number, field: 'title' | 'caption' | 'photoIdeas', value: string) => {
     setContentPlan(currentPlan => {
@@ -141,7 +140,7 @@ const App: React.FC = () => {
         { weekIndex, postIndex },
         postDate.toISOString().split('T')[0], // Pass date as YYYY-MM-DD
         instructions,
-        aiProvider,
+        'gemini',
         onboardingContent,
         pastPostsContent,
         specialInstructions,
@@ -168,7 +167,7 @@ const App: React.FC = () => {
         return next;
       });
     }
-  }, [practiceName, practiceUrl, startDate, postSchedule, contentPlan, onboardingContent, pastPostsContent, cachedResearch, aiProvider, specialInstructions]);
+  }, [practiceName, practiceUrl, startDate, postSchedule, contentPlan, onboardingContent, pastPostsContent, cachedResearch, specialInstructions]);
 
 
   return (
@@ -200,8 +199,6 @@ const App: React.FC = () => {
               setSpecialInstructions={setSpecialInstructions}
               milestones={milestones}
               setMilestones={setMilestones}
-              aiProvider={aiProvider}
-              setAiProvider={setAiProvider}
               onSubmit={handleSubmit}
               isLoading={isLoading}
             />
