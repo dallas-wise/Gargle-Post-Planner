@@ -8,8 +8,20 @@ import { Hero } from './components/Hero';
 import { Header } from './components/Header';
 import { extractTextFromPdf } from './utils/pdfParser';
 import { calculatePostDate } from './utils/dateUtils';
+import type { Milestone } from './components/MilestoneManager';
 
 type PostSchedule = 'MW' | 'TTH';
+
+// Helper function to convert Milestone[] to string format for geminiService
+const milestonesToString = (milestones: Milestone[]): string => {
+  return milestones.map(m => {
+    const date = new Date(m.date + 'T00:00:00');
+    const month = date.toLocaleDateString('en-US', { month: 'long' });
+    const day = date.getDate();
+    const typeLabel = m.type === 'birthday' ? 'Birthday' : 'Work Anniversary';
+    return `${m.name} ${typeLabel} - ${month} ${day}`;
+  }).join('\n');
+};
 
 const App: React.FC = () => {
   const [practiceName, setPracticeName] = useState<string>('');
@@ -21,7 +33,7 @@ const App: React.FC = () => {
   const [onboardingFile, setOnboardingFile] = useState<File | null>(null);
   const [pastPostsFile, setPastPostsFile] = useState<File | null>(null);
   const [specialInstructions, setSpecialInstructions] = useState<string>('');
-  const [milestones, setMilestones] = useState<string>('');
+  const [milestones, setMilestones] = useState<Milestone[]>([]);
   const [contentPlan, setContentPlan] = useState<WeekPlan[] | null>(null);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
@@ -98,7 +110,7 @@ const App: React.FC = () => {
         specialInstructions,
         practicePhone,
         practiceLocation,
-        milestones,
+        milestonesToString(milestones),
         cachedResearch,
         setCachedResearch
       );
