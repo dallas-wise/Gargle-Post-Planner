@@ -156,6 +156,8 @@ const App: React.FC = () => {
         onboardingContent,
         pastPostsContent,
         specialInstructions,
+        practicePhone,
+        practiceLocation,
         cachedResearch,
         setCachedResearch
       );

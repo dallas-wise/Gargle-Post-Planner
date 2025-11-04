@@ -134,12 +134,21 @@ Each headline must be 3-6 words long and cover a dental or dental office topic.
 Each caption should be 1–2 paragraphs long.
 For photo ideas, suggest 1-2 specific types of photos or content the client should provide to accompany the post (e.g., "Photo of the team in Halloween costumes", "Before/after smile transformation", "Office exterior shot").
 Highlight what makes the dental office unique (family-friendly, modern technology, gentle care) - but ONLY occasionally, not in every post.
-For calls to action, VARY the approach based on post type. Never suggest DMing to book. Mix these approaches:
-- Direct scheduling CTAs (use in 30-40% of posts): "Call us at [phone] or visit [website] to schedule", "Ready to book? Give us a call or visit [website]", "Schedule your appointment at [website] or call [phone]"
+
+For calls to action, VARY the approach based on post type. Never suggest DMing to book. Use the ACTUAL contact information provided in the data:
+- When you see "Practice phone number:" in the data, use that exact phone number in CTAs
+- When you see "Practice website url:" in the data, use that exact website URL in CTAs
+- NEVER use placeholder text like [phone] or [website] - always use the real contact information
+
+Mix these CTA approaches:
+- Direct scheduling CTAs (use in 30-40% of posts): Include the actual phone number and/or website URL. Examples: "Call us at (555) 123-4567 or visit www.example.com to schedule", "Ready to book? Give us a call or visit our website"
 - Soft engagement CTAs (use in 30-40% of posts): "What are your dental health goals this year?", "Tag someone who needs to hear this!", "Drop a 🦷 if you learned something new!"
-- Information CTAs (use in 20-30% of posts): "Visit [website] to learn more", "Find more tips at [website]", "Questions? Give us a call at [phone]"
+- Information CTAs (use in 20-30% of posts): Use the actual website URL when provided. Examples: "Visit www.example.com to learn more", "Questions? Give us a call"
 - Some posts (especially fun facts, jokes, or holiday wishes) can end naturally without a pushy CTA - just hashtags
-IMPORTANT: Avoid repetitive scheduling language like "schedule your appointment" or "book your cleaning" in every post. It feels robotic and pushy.
+
+IMPORTANT:
+1. Always replace placeholders with actual contact info from the provided data
+2. Avoid repetitive scheduling language like "schedule your appointment" or "book your cleaning" in every post. It feels robotic and pushy.
 Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post.
 ## Holiday Requirements
 When there is a holiday, you must place the holiday post on the scheduled date that is closest to the actual holiday. If one of the scheduled dates is the holiday itself, use that exact date. Otherwise, use the closest scheduled date that occurs before the holiday. Always evaluate both scheduled dates each week to confirm which option is closest.
@@ -745,6 +754,8 @@ export const generateSinglePost = async (
   onboardingContent?: string,
   pastPostsContent?: string,
   specialInstructions?: string,
+  practicePhone?: string,
+  practiceLocation?: string,
   cachedResearch?: { url: string; data: string } | null,
   setCachedResearch?: (cache: { url: string; data: string }) => void
 ): Promise<Post> => {
@@ -779,11 +790,28 @@ export const generateSinglePost = async (
 
   const singlePostBasePrompt = `${CORE_PROMPT}
 # Instructions
-Use the information below to create exactly one social media post for the specified dental practice and scheduled date. Follow all tone, voice, and content guidelines above. Write a 1–2 paragraph caption (bullet points are allowed when helpful). Highlight what makes the practice unique occasionally, but not in every post. For the call to action, vary your approach: use direct scheduling CTAs sometimes ("Call [phone] or visit [website]"), soft engagement CTAs other times ("Tag someone who needs this!", "What do you think?"), or informational CTAs ("Learn more at [website]"). Some posts can end naturally without a pushy CTA. Never suggest DMing to book. Avoid repetitive "schedule your appointment" language. Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post. If the provided date is the closest posting day before a holiday, make the post relevant to that holiday. Avoid duplicating any existing posts listed in the provided data.`;
+Use the information below to create exactly one social media post for the specified dental practice and scheduled date. Follow all tone, voice, and content guidelines above. Write a 1–2 paragraph caption (bullet points are allowed when helpful). Highlight what makes the practice unique occasionally, but not in every post.
+
+For the call to action, vary your approach and USE THE ACTUAL CONTACT INFORMATION provided in the data:
+- NEVER use placeholder text like [phone] or [website]
+- When you see "Practice phone number:" use that exact phone number
+- When you see "Practice website url:" use that exact website URL
+- Mix approaches: direct scheduling CTAs with actual contact info, soft engagement CTAs ("Tag someone who needs this!"), or informational CTAs with the actual website
+- Some posts can end naturally without a pushy CTA
+- Never suggest DMing to book
+- Avoid repetitive "schedule your appointment" language
+
+Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post. If the provided date is the closest posting day before a holiday, make the post relevant to that holiday. Avoid duplicating any existing posts listed in the provided data.`;
 
   const singlePostDataSections: string[] = [];
   singlePostDataSections.push(`Practice name: ${practiceName}`);
   singlePostDataSections.push(`Practice website url: ${practiceUrl}`);
+  if (practicePhone) {
+    singlePostDataSections.push(`Practice phone number: ${practicePhone}`);
+  }
+  if (practiceLocation) {
+    singlePostDataSections.push(`Practice locations: ${practiceLocation}`);
+  }
   singlePostDataSections.push(`Post date: ${postDate}`);
 
   if (normalizedGlobalInstructions) {
