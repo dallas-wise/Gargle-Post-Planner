@@ -171,7 +171,7 @@ const App: React.FC = () => {
 
 
   return (
-    <div className="bg-gray-50 min-h-screen text-gray-800 font-sans">
+    <div className="bg-gray-50 min-h-screen text-gray-800 font-serif">
       <Header />
       <main className="container mx-auto px-4 py-12 md:py-20">
         <div className="max-w-7xl mx-auto">
