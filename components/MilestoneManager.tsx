@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 export interface Milestone {
   id: string;
@@ -10,15 +10,23 @@ export interface Milestone {
 interface MilestoneManagerProps {
   milestones: Milestone[];
   setMilestones: (milestones: Milestone[]) => void;
+  onUnsavedDataChange?: (hasUnsavedData: boolean) => void;
 }
 
 export const MilestoneManager: React.FC<MilestoneManagerProps> = ({
   milestones,
   setMilestones,
+  onUnsavedDataChange,
 }) => {
   const [name, setName] = useState('');
   const [type, setType] = useState<'birthday' | 'work-anniversary'>('birthday');
   const [date, setDate] = useState('');
+
+  // Notify parent when there's unsaved data
+  useEffect(() => {
+    const hasUnsavedData = name.trim() !== '' || date !== '';
+    onUnsavedDataChange?.(hasUnsavedData);
+  }, [name, date, onUnsavedDataChange]);
 
   const handleAdd = () => {
     if (!name.trim() || !date) {

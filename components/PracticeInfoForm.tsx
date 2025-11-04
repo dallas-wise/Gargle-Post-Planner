@@ -52,6 +52,23 @@ export const PracticeInfoForm: React.FC<PracticeInfoFormProps> = ({
   onSubmit,
   isLoading,
 }) => {
+  const [hasUnsavedMilestone, setHasUnsavedMilestone] = React.useState(false);
+
+  const handleSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (hasUnsavedMilestone) {
+      const confirmed = window.confirm(
+        "You have unsaved milestone data. If you continue, it will be lost. Do you want to continue without adding this milestone?"
+      );
+      if (!confirmed) {
+        return;
+      }
+    }
+
+    onSubmit();
+  };
+
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>, setFile: (file: File | null) => void) => {
     const file = e.target.files?.[0];
     if (file) {
@@ -72,7 +89,7 @@ export const PracticeInfoForm: React.FC<PracticeInfoFormProps> = ({
   };
 
   return (
-    <form onSubmit={(e) => { e.preventDefault(); onSubmit(); }} className="space-y-8">
+    <form onSubmit={handleSubmit} className="space-y-8">
       <div className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
@@ -267,7 +284,11 @@ export const PracticeInfoForm: React.FC<PracticeInfoFormProps> = ({
 
       <div className="pt-6 border-t border-gray-200 space-y-6">
         <div>
-          <MilestoneManager milestones={milestones} setMilestones={setMilestones} />
+          <MilestoneManager
+            milestones={milestones}
+            setMilestones={setMilestones}
+            onUnsavedDataChange={setHasUnsavedMilestone}
+          />
         </div>
 
         <div>
