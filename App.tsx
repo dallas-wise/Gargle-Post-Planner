@@ -15,11 +15,8 @@ type PostSchedule = 'MW' | 'TTH';
 // Helper function to convert Milestone[] to string format for geminiService
 const milestonesToString = (milestones: Milestone[]): string => {
   return milestones.map(m => {
-    const date = new Date(m.date + 'T00:00:00');
-    const month = date.toLocaleDateString('en-US', { month: 'long' });
-    const day = date.getDate();
     const typeLabel = m.type === 'birthday' ? 'Birthday' : 'Work Anniversary';
-    return `${m.name} ${typeLabel} - ${month} ${day}`;
+    return `${m.name} ${typeLabel} - ${m.month} ${m.day}`;
   }).join('\n');
 };
 

@@ -4,7 +4,8 @@ export interface Milestone {
   id: string;
   name: string;
   type: 'birthday' | 'work-anniversary';
-  date: string; // YYYY-MM-DD format
+  month: string; // Month name (e.g., "January", "February")
+  day: number;   // Day of month (1-31)
 }
 
 interface MilestoneManagerProps {
@@ -13,6 +14,11 @@ interface MilestoneManagerProps {
   onUnsavedDataChange?: (hasUnsavedData: boolean) => void;
 }
 
+const MONTHS = [
+  'January', 'February', 'March', 'April', 'May', 'June',
+  'July', 'August', 'September', 'October', 'November', 'December'
+];
+
 export const MilestoneManager: React.FC<MilestoneManagerProps> = ({
   milestones,
   setMilestones,
@@ -20,17 +26,24 @@ export const MilestoneManager: React.FC<MilestoneManagerProps> = ({
 }) => {
   const [name, setName] = useState('');
   const [type, setType] = useState<'birthday' | 'work-anniversary'>('birthday');
-  const [date, setDate] = useState('');
+  const [month, setMonth] = useState('');
+  const [day, setDay] = useState('');
 
   // Notify parent when there's unsaved data
   useEffect(() => {
-    const hasUnsavedData = name.trim() !== '' || date !== '';
+    const hasUnsavedData = name.trim() !== '' || month !== '' || day !== '';
     onUnsavedDataChange?.(hasUnsavedData);
-  }, [name, date, onUnsavedDataChange]);
+  }, [name, month, day, onUnsavedDataChange]);
 
   const handleAdd = () => {
-    if (!name.trim() || !date) {
+    if (!name.trim() || !month || !day) {
       alert('Please fill in all fields');
+      return;
+    }
+
+    const dayNum = parseInt(day, 10);
+    if (isNaN(dayNum) || dayNum < 1 || dayNum > 31) {
+      alert('Please enter a valid day (1-31)');
       return;
     }
 
@@ -38,23 +51,24 @@ export const MilestoneManager: React.FC<MilestoneManagerProps> = ({
       id: `${Date.now()}-${Math.random()}`,
       name: name.trim(),
       type,
-      date,
+      month,
+      day: dayNum,
     };
 
     setMilestones([...milestones, newMilestone]);
 
     // Reset form
     setName('');
-    setDate('');
+    setMonth('');
+    setDay('');
   };
 
   const handleRemove = (id: string) => {
     setMilestones(milestones.filter(m => m.id !== id));
   };
 
-  const formatDate = (dateStr: string) => {
-    const date = new Date(dateStr + 'T00:00:00');
-    return date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+  const formatDate = (month: string, day: number) => {
+    return `${month} ${day}`;
   };
 
   const getTypeLabel = (type: 'birthday' | 'work-anniversary') => {
@@ -72,7 +86,7 @@ export const MilestoneManager: React.FC<MilestoneManagerProps> = ({
 
       {/* Input Form */}
       <div className="bg-gray-50 rounded-lg p-4 border border-gray-200 mb-3">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3 mb-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 mb-3">
           <div>
             <label htmlFor="milestone-name" className="block text-xs font-medium text-gray-700 mb-1">
               Person's Name
@@ -103,16 +117,35 @@ export const MilestoneManager: React.FC<MilestoneManagerProps> = ({
           </div>
 
           <div>
-            <label htmlFor="milestone-date" className="block text-xs font-medium text-gray-700 mb-1">
-              Date
+            <label htmlFor="milestone-month" className="block text-xs font-medium text-gray-700 mb-1">
+              Month
+            </label>
+            <select
+              id="milestone-month"
+              value={month}
+              onChange={(e) => setMonth(e.target.value)}
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white text-gray-900 text-sm"
+            >
+              <option value="">Select month</option>
+              {MONTHS.map(m => (
+                <option key={m} value={m}>{m}</option>
+              ))}
+            </select>
+          </div>
+
+          <div>
+            <label htmlFor="milestone-day" className="block text-xs font-medium text-gray-700 mb-1">
+              Day
             </label>
             <input
-              type="date"
-              id="milestone-date"
-              value={date}
-              onChange={(e) => setDate(e.target.value)}
+              type="number"
+              id="milestone-day"
+              value={day}
+              onChange={(e) => setDay(e.target.value)}
+              min="1"
+              max="31"
+              placeholder="1-31"
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition bg-white text-gray-900 text-sm"
-              style={{ colorScheme: 'light' }}
             />
           </div>
         </div>
@@ -146,7 +179,7 @@ export const MilestoneManager: React.FC<MilestoneManagerProps> = ({
                   <span className="text-gray-500 mx-2">•</span>
                   <span className="text-gray-600">{getTypeLabel(milestone.type)}</span>
                   <span className="text-gray-500 mx-2">•</span>
-                  <span className="text-gray-600">{formatDate(milestone.date)}</span>
+                  <span className="text-gray-600">{formatDate(milestone.month, milestone.day)}</span>
                 </div>
                 <button
                   type="button"
