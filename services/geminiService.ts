@@ -329,6 +329,93 @@ const generateWeeksBatch = async (
       diffDescription: string;
     }[];
 
+  // Parse and align team milestones (birthdays/work anniversaries)
+  const milestoneAlignment: Array<{
+    name: string;
+    date: Date;
+    slot: typeof allPostingSlots[number];
+    relation: 'exact' | 'before' | 'after';
+    diffDescription: string;
+  }> = [];
+
+  if (milestones?.trim()) {
+    const milestoneLines = milestones.trim().split('\n');
+
+    milestoneLines.forEach(line => {
+      const trimmedLine = line.trim();
+      if (!trimmedLine) return;
+
+      // Try to parse dates in various formats
+      // Supports: "Name - Month Day", "Name - Month Day, Year", "Name: Month Day", etc.
+      const datePatterns = [
+        /(.+?)\s*[-:]\s*([A-Za-z]+)\s+(\d{1,2})(?:,?\s+(\d{4}))?/i,  // "Dr. Smith Birthday - March 15" or "Dr. Smith - March 15, 2024"
+      ];
+
+      for (const pattern of datePatterns) {
+        const match = trimmedLine.match(pattern);
+        if (match) {
+          const [, name, monthStr, dayStr, yearStr] = match;
+          const month = monthStr.trim();
+          const day = parseInt(dayStr, 10);
+          const year = yearStr ? parseInt(yearStr, 10) : new Date(startDate).getFullYear();
+
+          // Parse the date
+          const milestoneDate = new Date(`${month} ${day}, ${year}`);
+
+          // Check if date is valid
+          if (!isNaN(milestoneDate.getTime())) {
+            // Use same alignment logic as holidays - prefer the date before or on the milestone
+            const candidatesBefore = allPostingSlots.filter(slot => slot.dateObj.getTime() <= milestoneDate.getTime());
+            let chosen = candidatesBefore.length
+              ? candidatesBefore.reduce((best, current) => {
+                  const bestDiff = milestoneDate.getTime() - best.dateObj.getTime();
+                  const currentDiff = milestoneDate.getTime() - current.dateObj.getTime();
+                  return currentDiff < bestDiff ? current : best;
+                })
+              : null;
+
+            let relation: 'exact' | 'before' | 'after';
+
+            if (chosen) {
+              relation = chosen.dateObj.getTime() === milestoneDate.getTime() ? 'exact' : 'before';
+            } else {
+              const candidatesAfter = allPostingSlots.filter(slot => slot.dateObj.getTime() > milestoneDate.getTime());
+              if (!candidatesAfter.length) {
+                return; // Skip if no suitable slot
+              }
+              chosen = candidatesAfter.reduce((best, current) => {
+                const bestDiff = Math.abs(milestoneDate.getTime() - best.dateObj.getTime());
+                const currentDiff = Math.abs(milestoneDate.getTime() - current.dateObj.getTime());
+                return currentDiff < bestDiff ? current : best;
+              });
+              relation = 'after';
+            }
+
+            const dayMs = 24 * 60 * 60 * 1000;
+            const diffDays = Math.round((milestoneDate.getTime() - chosen.dateObj.getTime()) / dayMs);
+            const absDiffDays = Math.abs(diffDays);
+            const diffDescription =
+              relation === 'exact'
+                ? 'on the exact date'
+                : relation === 'before'
+                  ? `${absDiffDays} day${absDiffDays === 1 ? '' : 's'} before`
+                  : `${absDiffDays} day${absDiffDays === 1 ? '' : 's'} after (no earlier post date is available in this plan)`;
+
+            milestoneAlignment.push({
+              name: name.trim(),
+              date: milestoneDate,
+              slot: chosen,
+              relation,
+              diffDescription,
+            });
+
+            break;
+          }
+        }
+      }
+    });
+  }
+
   // Format dates for the prompt
   const dateSchedule = relevantDates.map(({ week, dates }) =>
     `Week ${week}: ${dates.map(date => `${date.display} (${date.iso})`).join(' and ')}`
@@ -455,6 +542,7 @@ If you want to create holiday content, focus on general well-wishes, dental tips
 
 Look ahead at the next twelve weeks, and write out the dates that each post will be on. Based on that, if there are any holidays that happen within the twelve weeks, the post that happens right before the holiday must be holiday themed. Ensure that you get as close to the actual date as possible with your post.
 If you are given "Holiday alignment requirements", use the exact post assignments specified there without moving the holiday theme to any other date.
+If you are given "Team milestone alignment requirements" (birthdays, work anniversaries), create celebration posts for those team members on the EXACT post dates specified. Do not move these milestone posts to any other date. These are time-sensitive celebrations that must align with the actual milestone dates as closely as possible.
 If there are PDFs provided, read through the content. The Client Onboarding PDF will inform you of additional dental office information, which can give you more information to work with. The Avoid Duplicate PDF is a collection of posts that have been made by that dental office up to this point. Do not duplicate any of this content in your twelve week plan. If there is no PDF, move on to the next step.
 Collect information from the dental office's website, including services, offers, and people.
 Create an outline of the posts that you are going to make. List out each week and the topics that you will be covering.
@@ -483,9 +571,6 @@ Ensure that each post fulfills length, holiday, and instruction requirements by 
   if (referenceData.userInstructions) {
     dataSections.push(`Special instructions: ${referenceData.userInstructions}`);
   }
-  if (referenceData.teamMilestones) {
-    dataSections.push(`Birthdays/work anniversaries: ${referenceData.teamMilestones}`);
-  }
   if (referenceData.onboardingDocument) {
     dataSections.push(`Client Onboarding PDF content:\n${referenceData.onboardingDocument}`);
   }
@@ -499,6 +584,14 @@ Ensure that each post fulfills length, holiday, and instruction requirements by 
       return `${holiday.name} (${formatHolidayDate(holiday.date)}): Use the post scheduled for ${dayName}, ${slot.display} (${slot.iso}) [Post ${slot.sequence}, Week ${slot.week}, Post ${slot.postIndex + 1}] — ${diffDescription}. Do not move this holiday to any other date.`;
     });
     dataSections.push(`Holiday alignment requirements (must follow exactly):\n${holidayLines.join('\n')}`);
+  }
+  if (milestoneAlignment.length) {
+    const milestoneLines = milestoneAlignment.map(({ name, date, slot, diffDescription }) => {
+      const dayName = slot.dateObj.toLocaleDateString('en-US', { weekday: 'long' });
+      const dateStr = formatHolidayDate(date);
+      return `${name} (${dateStr}): Use the post scheduled for ${dayName}, ${slot.display} (${slot.iso}) [Post ${slot.sequence}, Week ${slot.week}, Post ${slot.postIndex + 1}] — ${diffDescription}. Create a celebration post for this milestone on this exact date assignment.`;
+    });
+    dataSections.push(`Team milestone alignment requirements (must follow exactly):\n${milestoneLines.join('\n')}`);
   }
 
   const systemInstruction = `${basePrompt}
