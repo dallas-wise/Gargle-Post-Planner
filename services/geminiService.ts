@@ -133,8 +133,14 @@ Generate a headline, caption, and photo ideas for each post.
 Each headline must be 3-6 words long and cover a dental or dental office topic.
 Each caption should be 1–2 paragraphs long.
 For photo ideas, suggest 1-2 specific types of photos or content the client should provide to accompany the post (e.g., "Photo of the team in Halloween costumes", "Before/after smile transformation", "Office exterior shot").
-Highlight what makes the dental office unique (family-friendly, modern technology, gentle care.)
-At the end, ALWAYS include a clear call to action that combines calling AND visiting the website. Vary the wording naturally (e.g., "Call us at [phone] or visit [website] to schedule!", "Give us a call or book online at [website]", "Ready to schedule? Call [phone] or visit [website]"). Never suggest DMing to book. Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post.
+Highlight what makes the dental office unique (family-friendly, modern technology, gentle care) - but ONLY occasionally, not in every post.
+For calls to action, VARY the approach based on post type. Never suggest DMing to book. Mix these approaches:
+- Direct scheduling CTAs (use in 30-40% of posts): "Call us at [phone] or visit [website] to schedule", "Ready to book? Give us a call or visit [website]", "Schedule your appointment at [website] or call [phone]"
+- Soft engagement CTAs (use in 30-40% of posts): "What are your dental health goals this year?", "Tag someone who needs to hear this!", "Drop a 🦷 if you learned something new!"
+- Information CTAs (use in 20-30% of posts): "Visit [website] to learn more", "Find more tips at [website]", "Questions? Give us a call at [phone]"
+- Some posts (especially fun facts, jokes, or holiday wishes) can end naturally without a pushy CTA - just hashtags
+IMPORTANT: Avoid repetitive scheduling language like "schedule your appointment" or "book your cleaning" in every post. It feels robotic and pushy.
+Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post.
 ## Holiday Requirements
 When there is a holiday, you must place the holiday post on the scheduled date that is closest to the actual holiday. If one of the scheduled dates is the holiday itself, use that exact date. Otherwise, use the closest scheduled date that occurs before the holiday. Always evaluate both scheduled dates each week to confirm which option is closest.
 # Examples
@@ -374,50 +380,68 @@ Birthdays/work anniversaries
 Special instructions
 
 ## Content Balance and Variety
-IMPORTANT: Use practice-specific details (from special instructions, onboarding PDFs, and team milestones) strategically and sparingly:
-- Incorporate unique practice details into 3-5 posts across the 12-week plan, not every post
-- Use special instructions as context and inspiration, but don't force them into every caption
-- Avoid repeating the same phrases or unique details multiple times across different posts
-- Balance practice-specific content with general dental education, fun facts, and engaging topics
-- The goal is natural, varied content that occasionally highlights what makes the practice special
+CRITICAL: Practice-specific details must be used VERY SPARINGLY to avoid repetition:
+- If special instructions mention unique features (e.g., "We have Netflix", "Spa-like atmosphere", "Same-day crowns"), use these phrases in ONLY 1-2 posts maximum across all 12 weeks
+- NEVER repeat the exact same practice-specific phrase or unique detail in multiple posts
+- Think of special instructions as background context, NOT a checklist to mention in every post
+- Most posts (18-20 out of 24) should be general dental content that could work for any practice
+- Only 4-6 posts should prominently feature practice-specific differentiators
+- Vary HOW you mention practice details - don't use the same phrasing patterns
+- The goal: readers should find the content fresh and varied, not repetitive marketing
 
 ## Content Categories - Mix These Throughout the 12 Weeks
-Create a diverse content mix using these categories. Aim for variety - no more than 2-3 posts of the same type:
+IMPORTANT: Draw content from MULTIPLE sources, not just the practice website. Create a diverse mix that feels fresh and varied.
 
-**Educational Tips** (3-4 posts): Share practical dental health advice beyond just "schedule your cleaning"
-- Proper brushing and flossing techniques
-- Foods that promote oral health or harm teeth
-- Signs of gum disease or other dental issues
-- Tips for sensitive teeth, bad breath prevention
-- Oral care for specific groups (kids, seniors, braces wearers)
+**Educational Tips** (2-3 posts): Diverse dental health advice - AVOID repetitive "brush and floss" messaging
+- Dental health myths debunked
+- How different foods/drinks affect teeth (coffee stains, acidic foods, teeth-strengthening foods)
+- Oral health connections to overall health (heart disease, diabetes, pregnancy)
+- Age-specific dental care (baby teeth care, wisdom teeth, senior oral health)
+- Managing dental anxiety or pain
+- DO NOT: Repeatedly tell people to "brush, floss, and schedule an appointment" - vary your educational topics!
 
-**Fun & Engaging** (2-3 posts): Light-hearted content that entertains
-- Dental jokes or puns
-- Fun dental facts or trivia
-- "Did you know?" posts about teeth and dental history
-- Playful questions to engage followers
+**Fun & Engaging** (3-4 posts): Light-hearted content from general dental knowledge, NOT the website
+- Dental jokes and puns
+- Weird dental facts and trivia ("Did you know snails have thousands of teeth?")
+- Historical dental facts (George Washington's teeth, ancient dental practices)
+- Pop culture references related to teeth/smiles
+- Interactive posts (polls, questions: "Coffee or tea?", "Do you floss daily?")
 
-**Practice Highlights** (3-4 posts): Showcase what makes this practice special (use research data)
-- Technology and modern equipment
-- Team spotlights and culture
+**Seasonal & Timely** (3-4 posts): Time-sensitive content relevant to the season or time of year
+- End-of-year insurance benefits reminders (November-December)
+- Back-to-school dental checkups (August-September)
+- Spring cleaning for your smile (March-April)
+- Summer vacation dental prep
+- New Year's resolution content (January)
+- Holiday season posts (not just on the holiday - throughout the season)
+- National awareness days (National Tooth Fairy Day, etc.)
+
+**Practice Highlights** (2-3 posts): Showcase practice uniqueness - USE WEBSITE RESEARCH SPARINGLY
+- Technology or equipment (mention ONCE if it's unique)
+- Team spotlights or milestones
 - Community involvement
-- Patient testimonial taglines (brief quotes or themes, not full reviews)
+- Patient testimonial themes (general, not specific details)
 
-**Promotional/Engagement** (2-3 posts): Encourage action and growth
-- Refer-a-friend campaigns
-- Follow us on social media
-- Share your smile stories
-- Patient appreciation
+**Promotional/Engagement** (2-3 posts): Community-building, NOT hard-sell
+- Refer-a-friend campaigns (with why referrals matter)
+- Patient appreciation posts
+- Social media engagement ("Follow us for more tips!")
+- Share your smile story campaigns
 
-**Seasonal/Holiday** (as applicable): Holiday-themed posts aligned to the schedule
+**Service-Focused** (1-2 posts): Specific treatments - ONLY when truly relevant
+- Only highlight services that are unique or seasonal (teeth whitening before holidays, Invisalign for New Year goals)
+- Keep it informational, not salesy
 
-**Service-Focused** (2-3 posts): Highlight specific treatments (use website research)
-- Cosmetic dentistry options
-- Preventative care benefits
-- Emergency dental care
-- Specialized services the practice offers
+BALANCE RULE: 75% of posts should be general content (educational, fun, seasonal) that any dental practice could post. Only 25% should be practice-specific or website-based.
 
-Balance general dental knowledge (usable by any practice) with practice-specific details. Most posts should be broadly educational or engaging, with occasional practice-specific highlights.
+## Seasonal Content Planning
+Look at the actual dates in your posting schedule to identify seasonal opportunities:
+- If posts fall in November-December: Include end-of-year insurance benefit reminders, holiday season content (not just holiday day posts)
+- If posts fall in August-September: Back-to-school dental checkup reminders
+- If posts fall in January: New Year's resolution content, fresh start themes
+- If posts fall in March-May: Spring cleaning themes, outdoor activity dental tips
+- If posts fall in June-August: Summer vacation dental prep
+- Create "lead-up" posts for major holidays: Thanksgiving prep, Christmas season (not just Christmas day), etc.
 
 ## Critical: Never Make Assumptions
 DO NOT mention or assume ANY of the following unless EXPLICITLY provided in the reference materials (onboarding PDF, special instructions, or website research):
@@ -662,7 +686,7 @@ export const generateSinglePost = async (
 
   const singlePostBasePrompt = `${CORE_PROMPT}
 # Instructions
-Use the information below to create exactly one social media post for the specified dental practice and scheduled date. Follow all tone, voice, and content guidelines above. Write a 1–2 paragraph caption (bullet points are allowed when helpful). Highlight what makes the practice unique, and ALWAYS include a clear call to action that combines calling AND visiting the website (never suggest DMing). Vary the wording naturally (e.g., "Call us at [phone] or visit [website]", "Give us a call or book online"). Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post. If the provided date is the closest posting day before a holiday, make the post relevant to that holiday. Avoid duplicating any existing posts listed in the provided data.`;
+Use the information below to create exactly one social media post for the specified dental practice and scheduled date. Follow all tone, voice, and content guidelines above. Write a 1–2 paragraph caption (bullet points are allowed when helpful). Highlight what makes the practice unique occasionally, but not in every post. For the call to action, vary your approach: use direct scheduling CTAs sometimes ("Call [phone] or visit [website]"), soft engagement CTAs other times ("Tag someone who needs this!", "What do you think?"), or informational CTAs ("Learn more at [website]"). Some posts can end naturally without a pushy CTA. Never suggest DMing to book. Avoid repetitive "schedule your appointment" language. Finish with 3-5 hashtags that blend local geography, dental work, and the subject of the post. If the provided date is the closest posting day before a holiday, make the post relevant to that holiday. Avoid duplicating any existing posts listed in the provided data.`;
 
   const singlePostDataSections: string[] = [];
   singlePostDataSections.push(`Practice name: ${practiceName}`);
