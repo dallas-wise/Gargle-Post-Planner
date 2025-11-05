@@ -27,7 +27,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, postDate, weekIndex, p
 
       <div className="flex-grow flex flex-col min-h-0">
         <div className='flex justify-between items-center mb-3'>
-          <span className="text-xs font-semibold uppercase tracking-wider text-blue-700 bg-blue-100 px-3 py-1 rounded-full self-start">
+          <span className="text-xs font-semibold uppercase tracking-wider text-white bg-[#F79622] px-3 py-1 rounded-full self-start">
             {postDate}
           </span>
         </div>
