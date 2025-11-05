@@ -82,7 +82,7 @@ export const PostCard: React.FC<PostCardProps> = ({ post, postDate, weekIndex, p
         <button
           onClick={() => onRegenerate(weekIndex, postIndex, instructions)}
           disabled={isRegenerating}
-          className="inline-flex items-center text-sm font-medium text-blue-600 hover:text-blue-800 disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
+          className="inline-flex items-center text-sm font-medium text-[#156fb9] hover:text-[#125e9f] disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
         >
           Generate New Post
         </button>
